@@ -1,0 +1,4 @@
+django==4.2
+pandas
+openpyxl  # Para archivos .xlsx
+xlrd      # Para archivos .xls antiguos 

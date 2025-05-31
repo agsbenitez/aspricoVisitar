@@ -1,0 +1,49 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Importar Afiliados{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Importar Afiliados desde Excel</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            {{ form.archivo_excel.label_tag }}
+                            {{ form.archivo_excel }}
+                            {% if form.archivo_excel.help_text %}
+                                <small class="form-text text-muted">{{ form.archivo_excel.help_text }}</small>
+                            {% endif %}
+                            {% if form.archivo_excel.errors %}
+                                <div class="alert alert-danger mt-2">
+                                    {{ form.archivo_excel.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h5>Instrucciones:</h5>
+                            <ul class="mb-0">
+                                <li>El archivo debe ser Excel (.xls o .xlsx)</li>
+                                <li>La primera fila debe contener los nombres de las columnas</li>
+                                <li>Los nombres de las columnas deben coincidir con los campos del modelo</li>
+                                <li>El campo CUIL debe ser único para cada registro</li>
+                            </ul>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Importar Afiliados
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
