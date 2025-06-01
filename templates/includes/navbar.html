@@ -30,6 +30,24 @@
                             </li>
                         </ul>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="consultasDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            Consultas
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="consultasDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'consultas:nueva_consulta' %}">
+                                    <i class="fas fa-file-medical"></i> Emitir Bono
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-list"></i> Listar Bonos
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav">

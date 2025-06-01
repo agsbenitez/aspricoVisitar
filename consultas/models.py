@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from afiliados.models import Afiliado, ObraSocial
+from datetime import timedelta
 
 class Consulta(models.Model):
     # Relaciones
@@ -18,14 +19,30 @@ class Consulta(models.Model):
     usuario = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        related_name='consultas_registradas'
+        related_name='consultas_registradas',
+        help_text='Usuario que emite la orden'
     )
 
     # Campos básicos
     nro_de_orden = models.AutoField(primary_key=True)
-    prestador = models.CharField(max_length=255)
-    fecha_emision = models.DateTimeField()
-    fecha_prestacion = models.DateTimeField(null=True, blank=True)
+    fecha_emision = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Fecha y hora de emisión de la orden'
+    )
+    fecha_prestacion = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text='Fecha en que se realizará o realizó la prestación'
+    )
+    prestador = models.CharField(
+        max_length=255,
+        help_text='Nombre del prestador o institución que brindará el servicio'
+    )
+    diagnostico = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text='Diagnóstico o motivo de la consulta'
+    )
     activo = models.BooleanField(
         default=True,
         help_text='Indica si la orden de prestación está activa o fue dada de baja'
@@ -47,3 +64,14 @@ class Consulta(models.Model):
     @property
     def afiliado_nombre(self):
         return self.afiliado.nombre
+
+    @property
+    def fecha_vencimiento(self):
+        """Calcula la fecha de vencimiento (30 días desde la emisión)"""
+        return self.fecha_emision + timedelta(days=30)
+
+    @property
+    def esta_vigente(self):
+        """Verifica si la orden está dentro del período de vigencia"""
+        from django.utils import timezone
+        return self.activo and self.fecha_emision <= timezone.now() <= self.fecha_vencimiento

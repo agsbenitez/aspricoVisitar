@@ -1,0 +1,299 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="mb-0">Nueva Orden de Consulta con error</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" id="consultaForm">
+                {% csrf_token %}
+                
+                <div class="form-group mb-4">
+                    <label for="buscar-afiliado">Buscar Afiliado</label>
+                    <div class="input-group">
+                        <input type="text" 
+                               name="{{ form.buscar_afiliado.name }}"
+                               id="buscar-afiliado"
+                               class="form-control"
+                               placeholder="Ingrese apellido, DNI o CUIL del afiliado"
+                               required>
+                    </div>
+                    <small class="form-text text-muted">Presione Enter para buscar</small>
+                    <div id="estado-busqueda" class="mt-2"></div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="{{ form.diagnostico.id_for_label }}">Diagnóstico</label>
+                    {{ form.diagnostico }}
+                </div>
+
+                <input type="hidden" id="afiliado_id" name="afiliado_id">
+                
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                        Generar Orden
+                    </button>
+                    {% if consulta %}
+                    <button type="button" class="btn btn-secondary" onclick="window.print()">
+                        Imprimir
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+
+            {% if consulta %}
+            <div class="mt-4">
+                {% include "consultas/bono_consulta.html" %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Resultados de Búsqueda -->
+<div class="modal fade" id="modalResultados" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resultados de la Búsqueda</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-resultados-busqueda">
+                    <!-- Aquí se mostrarán los resultados -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Afiliado No Encontrado -->
+<div class="modal fade" id="modalNoEncontrado" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Afiliado No Encontrado</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>No se encontró ningún afiliado con los datos ingresados.</p>
+                <p>Por favor, verifique los datos e intente nuevamente.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Afiliado -->
+<div class="modal fade" id="modalConfirmarAfiliado" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Confirmar Afiliado</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h6>Datos del Afiliado:</h6>
+                <div id="modal-info-afiliado" class="mt-3">
+                    <!-- Aquí se mostrarán los datos del afiliado -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarAfiliado">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery primero -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Luego Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let afiliadoSeleccionado = null;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const campoBusqueda = document.getElementById('buscar-afiliado');
+    const estadoBusqueda = document.getElementById('estado-busqueda');
+    const submitBtn = document.getElementById('submitBtn');
+    const consultaForm = document.getElementById('consultaForm');
+    const btnConfirmarAfiliado = document.getElementById('btnConfirmarAfiliado');
+
+    // Función principal de búsqueda
+    function realizarBusqueda(e) {
+        e.preventDefault();
+        const searchTerm = campoBusqueda.value.trim();
+        
+        if (searchTerm.length < 3) {
+            mostrarEstado('warning', 'Ingrese al menos 3 caracteres para buscar');
+            return;
+        }
+
+        mostrarEstado('info', 'Buscando...');
+        
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken
+            },
+            body: new URLSearchParams({
+                'buscar_afiliado': searchTerm
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.resultados.length === 0) {
+                $('#modalNoEncontrado').modal('show');
+                return;
+            }
+
+            // Mostrar resultados en el modal
+            mostrarResultadosEnModal(data.resultados);
+        })
+        .catch(error => {
+            mostrarEstado('danger', 'Error al realizar la búsqueda');
+            console.error('Error:', error);
+        });
+    }
+
+    function mostrarEstado(tipo, mensaje) {
+        estadoBusqueda.innerHTML = `<div class="alert alert-${tipo} mb-0 py-1">${mensaje}</div>`;
+    }
+
+    function mostrarResultadosEnModal(afiliados) {
+        const contenedor = document.getElementById('modal-resultados-busqueda');
+        const tabla = document.createElement('table');
+        tabla.className = 'table table-hover';
+        
+        // Crear encabezado
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>Apellido y Nombre</th>
+                <th>DNI</th>
+                <th>CUIL</th>
+                <th>Obra Social</th>
+                <th>Acciones</th>
+            </tr>
+        `;
+        tabla.appendChild(thead);
+        
+        // Crear cuerpo de la tabla
+        const tbody = document.createElement('tbody');
+        afiliados.forEach(afiliado => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${afiliado.nombre}</td>
+                <td>${afiliado.nrodoc}</td>
+                <td>${afiliado.cuil}</td>
+                <td>${afiliado.obra_social}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary btn-seleccionar" data-afiliado='${JSON.stringify(afiliado)}'>
+                        Seleccionar
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        tabla.appendChild(tbody);
+        
+        contenedor.innerHTML = '';
+        contenedor.appendChild(tabla);
+        
+        // Agregar eventos a los botones de seleccionar
+        contenedor.querySelectorAll('.btn-seleccionar').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const afiliado = JSON.parse(this.dataset.afiliado);
+                seleccionarAfiliado(afiliado);
+            });
+        });
+        
+        $('#modalResultados').modal('show');
+    }
+
+    function seleccionarAfiliado(afiliado) {
+        $('#modalResultados').modal('hide');
+        mostrarModalConfirmacion(afiliado);
+    }
+
+    function mostrarModalConfirmacion(afiliado) {
+        document.getElementById('modal-info-afiliado').innerHTML = `
+            <table class="table table-bordered">
+                <tr>
+                    <th>Nombre:</th>
+                    <td>${afiliado.nombre}</td>
+                </tr>
+                <tr>
+                    <th>DNI:</th>
+                    <td>${afiliado.nrodoc}</td>
+                </tr>
+                <tr>
+                    <th>CUIL:</th>
+                    <td>${afiliado.cuil}</td>
+                </tr>
+                <tr>
+                    <th>Obra Social:</th>
+                    <td>${afiliado.obra_social}</td>
+                </tr>
+            </table>
+        `;
+        afiliadoSeleccionado = afiliado;
+        $('#modalConfirmarAfiliado').modal('show');
+    }
+
+    // Event Listeners
+    campoBusqueda.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            realizarBusqueda(e);
+        }
+    });
+
+    consultaForm.addEventListener('submit', function(e) {
+        if (!afiliadoSeleccionado) {
+            e.preventDefault();
+            mostrarEstado('warning', 'Debe seleccionar un afiliado primero');
+        }
+    });
+
+    btnConfirmarAfiliado.addEventListener('click', function() {
+        if (afiliadoSeleccionado) {
+            document.getElementById('afiliado_id').value = afiliadoSeleccionado.id;
+            submitBtn.disabled = false;
+            mostrarEstado('success', `Afiliado seleccionado: ${afiliadoSeleccionado.nombre}`);
+            $('#modalConfirmarAfiliado').modal('hide');
+        }
+    });
+
+    // Limpiar modales al cerrar
+    $('#modalNoEncontrado, #modalConfirmarAfiliado, #modalResultados').on('hidden.bs.modal', function () {
+        if (!afiliadoSeleccionado) {
+            campoBusqueda.value = '';
+            mostrarEstado('info', 'Ingrese apellido, DNI o CUIL del afiliado y presione Enter');
+        }
+    });
+
+    // Mostrar mensaje inicial
+    mostrarEstado('info', 'Ingrese apellido, DNI o CUIL del afiliado y presione Enter');
+});
+</script>
+{% endblock %} 

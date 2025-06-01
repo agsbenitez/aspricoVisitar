@@ -1,0 +1,120 @@
+<!-- Bono de Consulta -->
+<div class="bono-consulta">
+    <div class="bono-header">
+        <div class="logo">
+            <!-- Aquí va el logo -->
+        </div>
+        <div class="titulo">
+            <h2>BONO DE CONSULTA</h2>
+        </div>
+        <div class="datos-bono">
+            <p><strong>Nº de Orden:</strong> {{ consulta.nro_de_orden }}</p>
+            <p><strong>Fecha:</strong> {{ consulta.fecha_emision|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <div class="datos-afiliado">
+        <div class="row">
+            <div class="col-md-8">
+                <p><strong>Apellido y Nombre:</strong> {{ consulta.afiliado.nombre }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>DNI:</strong> {{ consulta.afiliado.nrodoc }}</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-8">
+                <p><strong>Obra Social:</strong> {{ consulta.obra_social.os_nombre }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>Nº Afiliado:</strong> {{ consulta.afiliado.nro_afiliado }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="datos-consulta">
+        <div class="row">
+            <div class="col-md-12">
+                <p><strong>Prestador:</strong> {{ consulta.prestador }}</p>
+            </div>
+        </div>
+        {% if consulta.diagnostico %}
+        <div class="row">
+            <div class="col-md-12">
+                <p><strong>Diagnóstico:</strong> {{ consulta.diagnostico }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="firmas mt-5">
+        <div class="row">
+            <div class="col-md-6 text-center">
+                <div class="firma-box">
+                    <p>_______________________</p>
+                    <p>Firma del Afiliado</p>
+                </div>
+            </div>
+            <div class="col-md-6 text-center">
+                <div class="firma-box">
+                    <p>_______________________</p>
+                    <p>Firma del Profesional</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bono-consulta {
+    border: 1px solid #000;
+    padding: 20px;
+    margin: 20px 0;
+    background: #fff;
+}
+
+.bono-header {
+    border-bottom: 2px solid #000;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+.titulo {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.datos-bono {
+    text-align: right;
+}
+
+.datos-afiliado, .datos-consulta {
+    margin: 20px 0;
+}
+
+.firma-box {
+    margin-top: 30px;
+}
+
+.firma-box p {
+    margin: 5px 0;
+}
+
+@media print {
+    .bono-consulta {
+        border: none;
+        padding: 0;
+    }
+    
+    body {
+        background: #fff;
+    }
+    
+    .container {
+        width: 100%;
+        max-width: none;
+        padding: 0;
+        margin: 0;
+    }
+}
+</style> 
