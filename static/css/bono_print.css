@@ -1,79 +1,75 @@
-/* Estilos para la impresión del bono */
+/* Estilos para el bono de consulta en modo impresión */
 @media print {
-    /* Ocultar elementos no necesarios */
-    body > *:not(#bono-container),
-    .container > *:not(#bono-container),
-    .card,
-    .card-header,
-    .card-body > *:not(#bono-container),
-    .btn, 
-    .form-group,
-    #estado-busqueda,
-    .modal {
+    /* Ocultar elementos de navegación y otros elementos no necesarios */
+    nav, 
+    footer, 
+    .sidebar,
+    .no-print,
+    .navbar,
+    .breadcrumb,
+    .alert {
         display: none !important;
     }
 
-    /* Mostrar y posicionar el bono */
-    #bono-container {
-        display: block !important;
-        position: relative !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
+    /* Ajustes generales de página */
+    body {
+        margin: 0;
+        padding: 0;
+        background: white !important;
     }
 
+    .container,
+    .container-fluid {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Ajustes específicos del bono */
     .bono-consulta {
         border: 1px solid #000 !important;
         padding: 20px !important;
         margin: 0 !important;
-        width: 100% !important;
-        background: white !important;
-        color: black !important;
+        max-width: none !important;
         box-shadow: none !important;
+        position: relative !important;
+        min-height: 600px !important;
     }
 
-    /* Asegurar que todos los elementos del bono sean visibles */
-    .bono-consulta,
-    .header-bono,
-    .datos-principales,
-    .firmas,
+    .header-bono {
+        border-bottom: 2px solid #000 !important;
+    }
+
+    .datos-principales {
+        border: 1px solid #000 !important;
+        background: white !important;
+    }
+
+    /* Asegurar que el usuario emisor se muestre */
     .usuario-emision {
+        position: absolute !important;
+        bottom: 10px !important;
+        right: 20px !important;
+        font-size: 0.8em !important;
+        color: #666 !important;
         display: block !important;
-        visibility: visible !important;
+        page-break-inside: avoid !important;
     }
 
-    /* Asegurar que los textos sean negros y visibles */
-    .bono-consulta * {
-        color: black !important;
-        visibility: visible !important;
+    .usuario-emision p {
+        margin: 0 !important;
+        display: block !important;
     }
 
-    /* Ajustar márgenes y tamaños de página */
+    /* Configuración de página */
     @page {
         margin: 1cm;
         size: A4;
     }
-
-    /* Resetear algunos estilos que podrían interferir */
-    html, body {
-        height: auto !important;
-        overflow: visible !important;
-        background: white !important;
-    }
-
-    /* Asegurar que las filas y columnas de Bootstrap se muestren correctamente */
-    .row {
-        display: flex !important;
-    }
-    
-    .col-md-4, .col-md-8, .col-md-12 {
-        display: block !important;
-    }
 }
 
-/* Estilos para la vista en pantalla */
+/* Estilos generales del bono */
 .bono-consulta {
     border: 1px solid #000;
     padding: 20px;
@@ -82,6 +78,7 @@
     background: white;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
     position: relative;
+    min-height: 600px;
 }
 
 .header-bono {

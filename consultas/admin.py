@@ -9,7 +9,7 @@ class ConsultaAdmin(admin.ModelAdmin):
     search_fields = ['nro_de_orden', 'afiliado__nombre', 'afiliado__cuil', 
                     'obra_social__os_nombre', 'prestador']
     date_hierarchy = 'fecha_emision'
-    readonly_fields = ['nro_de_orden']
+    readonly_fields = ['nro_de_orden', 'fecha_emision']
     list_per_page = 20
     list_editable = ['activo']  # Permite cambiar el estado directamente desde la lista
 
@@ -21,12 +21,12 @@ class ConsultaAdmin(admin.ModelAdmin):
         }),
         ('Fechas', {
             'fields': [
-                'fecha_emision', 'fecha_prestacion'
+                'fecha_prestacion'
             ]
         }),
         ('Información del Sistema', {
             'fields': [
-                'nro_de_orden', 'usuario'
+                'nro_de_orden', 'fecha_emision', 'usuario'
             ]
         })
     ]

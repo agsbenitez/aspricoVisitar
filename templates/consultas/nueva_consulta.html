@@ -9,7 +9,7 @@
 <div class="container mt-4">
     <div class="card">
         <div class="card-header">
-            <h3 class="mb-0">Nueva Orden de Consulta con error</h3>
+            <h3 class="mb-0">Nueva Orden de Consulta</h3>
         </div>
         <div class="card-body">
             <form method="post" id="consultaForm">
@@ -40,19 +40,15 @@
                     <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
                         Generar Orden
                     </button>
-                    {% if consulta %}
-                    <button type="button" class="btn btn-secondary" onclick="window.print()">
+                    <button type="button" class="btn btn-secondary" onclick="imprimirBono()">
                         Imprimir
                     </button>
-                    {% endif %}
                 </div>
             </form>
 
-            {% if consulta %}
-            <div class="mt-4">
+            <div class="mt-4" id="bono-container">
                 {% include "consultas/bono_consulta.html" %}
             </div>
-            {% endif %}
         </div>
     </div>
 </div>
@@ -127,6 +123,20 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+function imprimirBono() {
+    const bonoContainer = document.getElementById('bono-container');
+    if (!bonoContainer || !bonoContainer.innerHTML.trim()) {
+        alert('Primero debe generar un bono para poder imprimirlo.');
+        return;
+    }
+    
+    // Abrir la ventana de impresión usando la URL dedicada
+    const ventanaImpresion = window.open('/consultas/imprimir-bono/', '_blank');
+    ventanaImpresion.onload = function() {
+        ventanaImpresion.print();
+    };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     let afiliadoSeleccionado = null;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -180,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function mostrarEstado(tipo, mensaje) {
+        console.log(`Estado: ${tipo} - Mensaje: ${mensaje}`); // Debug
         estadoBusqueda.innerHTML = `<div class="alert alert-${tipo} mb-0 py-1">${mensaje}</div>`;
     }
 
@@ -272,10 +283,106 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     consultaForm.addEventListener('submit', function(e) {
+        e.preventDefault();
         if (!afiliadoSeleccionado) {
-            e.preventDefault();
             mostrarEstado('warning', 'Debe seleccionar un afiliado primero');
+            return;
         }
+
+        mostrarEstado('info', 'Procesando...');
+
+        const formData = new FormData(this);
+        
+        // Debug: Mostrar datos que se están enviando
+        const datosFormulario = {
+            afiliado_id: formData.get('afiliado_id'),
+            diagnostico: formData.get('diagnostico'),
+            buscar_afiliado: formData.get('buscar_afiliado'),
+            csrfmiddlewaretoken: formData.get('csrfmiddlewaretoken')
+        };
+        console.log('Datos enviados en el formulario:', datosFormulario);
+
+        // Validar que tenemos el ID del afiliado
+        if (!datosFormulario.afiliado_id) {
+            mostrarEstado('danger', 'Error: No se ha seleccionado un afiliado');
+            return;
+        }
+
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-Action': 'create_consulta'  // Identificador específico para crear consulta
+            },
+            body: formData
+        })
+        .then(response => {
+            console.log('Respuesta completa:', response);
+            console.log('Headers:', {
+                contentType: response.headers.get('content-type'),
+                action: response.headers.get('X-Action')
+            });
+            
+            // Verificamos si la respuesta es JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Tipo de contenido no válido:', contentType);
+                throw new TypeError('La respuesta no es JSON');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos del servidor:', data);
+            
+            // Validación más detallada de la respuesta
+            if (!data) {
+                throw new Error('No se recibieron datos del servidor');
+            }
+
+            // Si tenemos el HTML del bono, lo insertamos
+            if (data.success && data.html) {
+                try {
+                    const bonoContainer = document.getElementById('bono-container');
+                    if (bonoContainer) {
+                        bonoContainer.innerHTML = data.html;
+                        mostrarEstado('success', 'Bono generado exitosamente');
+                        // Deshabilitamos el botón después de generar el bono
+                        submitBtn.disabled = true;
+                        // Limpiamos el formulario
+                        campoBusqueda.value = '';
+                        document.getElementById('afiliado_id').value = '';
+                        if (document.getElementById('id_diagnostico')) {
+                            document.getElementById('id_diagnostico').value = '';
+                        }
+                        afiliadoSeleccionado = null;
+                    } else {
+                        console.error('No se encontró el contenedor del bono');
+                        throw new Error('No se encontró el contenedor del bono');
+                    }
+                } catch (error) {
+                    console.error('Error al actualizar el bono:', error);
+                    mostrarEstado('warning', 'Bono generado pero hubo un error al mostrar los datos');
+                }
+            } else if (data.errors) {
+                let mensajeError = 'Error al generar el bono';
+                if (typeof data.errors === 'string') {
+                    mensajeError += ': ' + data.errors;
+                } else if (typeof data.errors === 'object') {
+                    const errores = Object.values(data.errors).flat();
+                    mensajeError += ': ' + errores.join(', ');
+                }
+                console.error('Errores recibidos:', data.errors);
+                mostrarEstado('danger', mensajeError);
+            } else {
+                console.error('Respuesta inesperada:', data);
+                mostrarEstado('danger', 'Error: Respuesta del servidor no válida');
+            }
+        })
+        .catch(error => {
+            console.error('Error completo:', error);
+            mostrarEstado('danger', 'Error al procesar la solicitud: ' + error.message);
+        });
     });
 
     btnConfirmarAfiliado.addEventListener('click', function() {

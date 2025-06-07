@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
@@ -6,6 +6,8 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Q
 import logging
+import json
+from django.contrib import messages
 
 logger = logging.getLogger(__name__)
 
@@ -42,44 +44,124 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         """Procesa el formulario válido"""
-        logger.info('Iniciando form_valid en NuevaConsultaView')
-        form.instance.usuario = self.request.user
-        form.instance.fecha_emision = timezone.now()
-        form.instance.prestador = 'RED ASPRICO ACE'
-        logger.info(f'Datos del formulario: {form.cleaned_data}')
-        response = super().form_valid(form)
-        logger.info(f'Consulta creada con ID: {form.instance.nro_de_orden}')
-        return response
+        try:
+            logger.info('Iniciando form_valid en NuevaConsultaView')
+            
+            # Asignar datos básicos
+            form.instance.usuario = self.request.user
+            form.instance.fecha_emision = timezone.now()
+            form.instance.prestador = 'RED ASPRICO ACE'
+            
+            # Log de los datos del formulario
+            logger.info(f'Datos del formulario: {form.cleaned_data}')
+            
+            # Guardar la instancia
+            self.object = form.save()
+            logger.info(f'Consulta creada con ID: {self.object.nro_de_orden}')
+            
+            # Si es una petición AJAX, devolver HTML renderizado
+            if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # Renderizar el template con los datos actualizados
+                html_content = render(self.request, 'consultas/bono_consulta.html', {
+                    'consulta': self.object,
+                    'success': True
+                }).content.decode('utf-8')
+                
+                return JsonResponse({
+                    'success': True,
+                    'html': html_content
+                }, json_dumps_params={'ensure_ascii': False})
+            
+            return super().form_valid(form)
+            
+        except Exception as e:
+            logger.error(f'Error en form_valid: {str(e)}')
+            if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                error_data = {
+                    'success': False,
+                    'errors': str(e)
+                }
+                logger.error(f'Enviando respuesta de error: {error_data}')
+                return JsonResponse(
+                    error_data,
+                    content_type='application/json',
+                    json_dumps_params={'ensure_ascii': False}
+                )
+            raise
 
     def form_invalid(self, form):
         """Log de errores cuando el formulario es inválido"""
         logger.error(f'Errores en el formulario: {form.errors}')
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors
+            }, content_type='application/json')
         return super().form_invalid(form)
 
     def post(self, request, *args, **kwargs):
         """Maneja las peticiones POST, incluyendo búsquedas AJAX"""
         logger.info(f'Método POST recibido - Es AJAX: {request.headers.get("X-Requested-With") == "XMLHttpRequest"}')
+        logger.info(f'Headers recibidos: {request.headers}')
         logger.info(f'Datos POST recibidos: {request.POST}')
 
+        # Si es una petición AJAX
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            # Es una petición AJAX para buscar afiliados
-            termino = request.POST.get('buscar_afiliado', '').strip()
-            if termino:
-                afiliados = Afiliado.objects.filter(
-                    Q(nombre__icontains=termino) |
-                    Q(nrodoc__icontains=termino) |
-                    Q(cuil__icontains=termino)
-                )[:10]  # Limitamos a 10 resultados
-                
-                resultados = [{
-                    'id': afiliado.id,
-                    'nombre': afiliado.nombre,
-                    'nrodoc': afiliado.nrodoc,
-                    'cuil': afiliado.cuil,
-                    'obra_social': afiliado.obra_social.os_nombre
-                } for afiliado in afiliados]
-                
-                return JsonResponse({'resultados': resultados})
-            return JsonResponse({'resultados': []})
+            # Verificar si es una búsqueda de afiliados
+            if 'buscar_afiliado' in request.POST and not request.headers.get('X-Action'):
+                logger.info('Procesando búsqueda de afiliados')
+                termino = request.POST.get('buscar_afiliado', '').strip()
+                if termino:
+                    try:
+                        afiliados = Afiliado.objects.filter(
+                            Q(nombre__icontains=termino) |
+                            Q(nrodoc__icontains=termino) |
+                            Q(cuil__icontains=termino)
+                        )[:10]  # Limitamos a 10 resultados
+                        
+                        resultados = [{
+                            'id': afiliado.id,
+                            'nombre': afiliado.nombre,
+                            'nrodoc': afiliado.nrodoc,
+                            'cuil': afiliado.cuil,
+                            'obra_social': afiliado.obra_social.os_nombre
+                        } for afiliado in afiliados]
+                        
+                        return JsonResponse({'resultados': resultados}, content_type='application/json')
+                    except Exception as e:
+                        logger.error(f'Error en búsqueda de afiliados: {str(e)}')
+                        return JsonResponse({
+                            'success': False,
+                            'error': str(e)
+                        }, content_type='application/json')
+                        
+                return JsonResponse({'resultados': []}, content_type='application/json')
             
+            # Si es una creación de consulta (tiene X-Action o tiene afiliado_id)
+            elif request.headers.get('X-Action') == 'create_consulta' or 'afiliado_id' in request.POST:
+                logger.info('Procesando creación de consulta')
+                return super().post(request, *args, **kwargs)
+            
+            # Si no es ninguna de las anteriores, es un error
+            else:
+                logger.error('Petición AJAX no reconocida')
+                return JsonResponse({
+                    'success': False,
+                    'errors': 'Tipo de petición no reconocida'
+                }, content_type='application/json')
+        
+        # Si no es AJAX, procesar normalmente
         return super().post(request, *args, **kwargs)
+
+def imprimir_bono(request):
+    """Vista para mostrar el bono en formato de impresión"""
+    # Obtener el último bono generado para el usuario actual
+    bono = Consulta.objects.filter(usuario=request.user).last()
+    
+    if not bono:
+        messages.error(request, 'No hay bono disponible para imprimir')
+        return redirect('consultas:nueva_consulta')
+        
+    return render(request, 'consultas/bono_consulta_print.html', {
+        'consulta': bono  # Cambiado de 'bono' a 'consulta' para mantener consistencia
+    })

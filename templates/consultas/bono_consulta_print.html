@@ -1,0 +1,14 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Bono de Consulta{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/bono_print.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    {% include "consultas/bono_consulta.html" %}
+</div>
+{% endblock %} 
