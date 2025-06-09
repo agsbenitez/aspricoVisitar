@@ -1,0 +1,149 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/consultas.css' %}">
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Bonos Emitidos</h3>
+            <div>
+                <a href="{% url 'consultas:nueva_consulta' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Bono
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <form method="get" class="form-inline d-flex gap-2">
+                        <div class="flex-grow-1">
+                            <input type="text" name="q" class="form-control" placeholder="Buscar por afiliado, DNI o CUIL" value="{{ request.GET.q }}">
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-primary">Buscar</button>
+                            {% if request.GET.q %}
+                                <a href="{% url 'consultas:lista_bonos' %}" class="btn btn-secondary">Limpiar</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fecha Emisión</th>
+                            <th>Nro. Orden</th>
+                            <th>Afiliado</th>
+                            <th>DNI</th>
+                            <th>Obra Social</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for consulta in consultas %}
+                        <tr>
+                            <td>{{ consulta.fecha_emision|date:"d/m/Y" }}</td>
+                            <td>{{ consulta.nro_de_orden }}</td>
+                            <td>{{ consulta.afiliado.nombre }}</td>
+                            <td>{{ consulta.afiliado.nrodoc }}</td>
+                            <td>{{ consulta.obra_social.nombre }}</td>
+                            <td>
+                                {% if consulta.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Anulado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="window.imprimirBono('{{ consulta.nro_de_orden }}')">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                    {% if consulta.activo %}
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="window.anularBono('{{ consulta.nro_de_orden }}')">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No se encontraron bonos emitidos</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if consultas.has_other_pages %}
+            <nav aria-label="Paginación de bonos" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if consultas.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ consultas.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in consultas.paginator.page_range %}
+                        {% if consultas.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if consultas.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ consultas.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                            Siguiente
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Anular -->
+<div class="modal fade" id="modalAnularBono" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Anulación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea anular este bono?</p>
+                <p class="text-danger">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarAnulacion">Anular Bono</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script defer src="{% static 'js/lista_bonos.js' %}"></script>
+{% endblock %} 

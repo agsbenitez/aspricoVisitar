@@ -1,10 +1,12 @@
-from django.shortcuts import render, redirect
-from django.views.generic import CreateView
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import CreateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Q
+from django.core.paginator import Paginator
 import logging
 import json
 from django.contrib import messages
@@ -16,6 +18,69 @@ from .forms import ConsultaForm
 from afiliados.models import Afiliado
 
 # Create your views here.
+
+class ListaBonosView(LoginRequiredMixin, ListView):
+    model = Consulta
+    template_name = 'consultas/lista_bonos.html'
+    context_object_name = 'consultas'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = Consulta.objects.all().order_by('-fecha_emision')
+        q = self.request.GET.get('q')
+        if q:
+            queryset = queryset.filter(
+                Q(afiliado__nombre__icontains=q) |
+                Q(afiliado__nrodoc__icontains=q) |
+                Q(afiliado__cuil__icontains=q)
+            )
+        return queryset
+
+@login_required
+def anular_bono(request, bono_id):
+    if request.method == 'POST':
+        try:
+            bono = get_object_or_404(Consulta, nro_de_orden=bono_id)
+            if not bono.activo:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'El bono ya está anulado'
+                })
+            
+            bono.activo = False
+            bono.save()
+            
+            return JsonResponse({
+                'success': True
+            })
+        except Exception as e:
+            logger.error(f'Error al anular bono {bono_id}: {str(e)}')
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    })
+
+@login_required
+def imprimir_bono(request, bono_id=None):
+    """Vista para mostrar el bono en formato de impresión"""
+    if bono_id:
+        bono = get_object_or_404(Consulta, nro_de_orden=bono_id)
+    else:
+        # Si no se especifica ID, obtener el último bono generado por el usuario
+        bono = Consulta.objects.filter(usuario=request.user).last()
+    
+    if not bono:
+        messages.error(request, 'No hay bono disponible para imprimir')
+        return redirect('consultas:nueva_consulta')
+        
+    return render(request, 'consultas/bono_consulta_print.html', {
+        'consulta': bono
+    })
 
 class NuevaConsultaView(LoginRequiredMixin, CreateView):
     model = Consulta
@@ -152,16 +217,3 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
         
         # Si no es AJAX, procesar normalmente
         return super().post(request, *args, **kwargs)
-
-def imprimir_bono(request):
-    """Vista para mostrar el bono en formato de impresión"""
-    # Obtener el último bono generado para el usuario actual
-    bono = Consulta.objects.filter(usuario=request.user).last()
-    
-    if not bono:
-        messages.error(request, 'No hay bono disponible para imprimir')
-        return redirect('consultas:nueva_consulta')
-        
-    return render(request, 'consultas/bono_consulta_print.html', {
-        'consulta': bono  # Cambiado de 'bono' a 'consulta' para mantener consistencia
-    })
