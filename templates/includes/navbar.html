@@ -19,7 +19,7 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="afiliadosDropdown">
                             <li>
-                                <a class="dropdown-item" href="{% url 'admin:afiliados_afiliado_changelist' %}">
+                                <a class="dropdown-item" href="{% url 'afiliados:lista_afiliados' %}">
                                     Listar Afiliados
                                 </a>
                             </li>
@@ -62,12 +62,13 @@
                                 <li><a class="dropdown-item" href="{% url 'admin:index' %}">Admin</a></li>
                             {% endif %}
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Cerrar Sesión</a></li>
+                            
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Salir</a></li>
                         </ul>
                     </li>
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Iniciar Sesión</a>
+                        <a class="nav-link" href="{% url 'login' %}">Iniciar Sesión</a>
                     </li>
                 {% endif %}
             </ul>

@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import CreateView, ListView
 from django.views.generic.edit import FormView
 from django.urls import reverse_lazy
 from django.db import transaction, IntegrityError
@@ -9,6 +10,24 @@ import pandas as pd
 import os
 from .forms import ImportarAfiliadosForm
 from .models import Afiliado, ObraSocial
+
+
+class ListaAfiliadosView(LoginRequiredMixin, ListView):
+    model = Afiliado
+    template_name = 'afiliado/lista_afiliados.html'
+    context_object_name = 'afiliados'
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = Afiliado.objects.all().order_by('nombre')
+        q = self.request.GET.get('q')
+        if q:
+            queryset = queryset.filter(
+                Q(afiliado__nombre__icontains=q) |
+                Q(afiliado__nrodoc__icontains=q) |
+                Q(afiliado__cuil__icontains=q)
+            )
+        return queryset
 
 class ImportarAfiliadosView(LoginRequiredMixin, FormView):
     template_name = 'afiliados/importar.html'

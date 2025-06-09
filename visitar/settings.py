@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'afiliados',
     'consultas',
+    'autenticacion',
 ]
 
 MIDDLEWARE = [
@@ -68,6 +69,11 @@ TEMPLATES = [
         },
     },
 ]
+
+OGIN_URL = 'login'  # URL a la que se redirige si no está logueado
+LOGIN_REDIRECT_URL = 'home'  # Vista a la que va después de iniciar sesión
+LOGOUT_REDIRECT_URL = 'login'  # Vista a la que va después de hacer logout
+
 
 WSGI_APPLICATION = 'visitar.wsgi.application'
 

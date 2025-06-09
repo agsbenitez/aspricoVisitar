@@ -1,0 +1,165 @@
+/* Estilos para el bono de consulta en modo impresión */
+@media print {
+    /* Ocultar elementos de navegación y otros elementos no necesarios */
+    nav, 
+    footer, 
+    .sidebar,
+    .no-print,
+    .navbar,
+    .breadcrumb,
+    .alert {
+        display: none !important;
+    }
+
+    /* Ajustes generales de página */
+    body {
+        margin: 0;
+        padding: 0;
+        background: white !important;
+    }
+
+    .container,
+    .container-fluid {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Ajustes específicos del bono */
+    .bono-consulta {
+        border: 1px solid #000 !important;
+        padding: 20px !important;
+        margin: 0 !important;
+        max-width: none !important;
+        box-shadow: none !important;
+        position: relative !important;
+        min-height: 600px !important;
+    }
+
+    .header-bono {
+        border-bottom: 2px solid #000 !important;
+    }
+
+    .datos-principales {
+        border: 1px solid #000 !important;
+        background: white !important;
+    }
+
+    /* Asegurar que el usuario emisor se muestre */
+    .usuario-emision {
+        position: absolute !important;
+        bottom: 10px !important;
+        right: 20px !important;
+        font-size: 0.8em !important;
+        color: #666 !important;
+        display: block !important;
+        page-break-inside: avoid !important;
+    }
+
+    .usuario-emision p {
+        margin: 0 !important;
+        display: block !important;
+    }
+
+    /* Configuración de página */
+    @page {
+        margin: 1cm;
+        size: A4;
+    }
+}
+
+/* Estilos generales del bono */
+.bono-consulta {
+    border: 1px solid #000;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    position: relative;
+    min-height: 600px;
+}
+
+.header-bono {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.logo-asprico {
+    width: 150px;
+    text-align: center;
+}
+
+.logo-asprico i {
+    color: #0056b3;
+}
+
+.logo-text {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-top: 5px;
+}
+
+.titulo-bono {
+    text-align: center;
+    flex-grow: 1;
+    margin: 0 20px;
+}
+
+.titulo-bono h2 {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: bold;
+}
+
+.datos-header {
+    text-align: right;
+    min-width: 200px;
+}
+
+.datos-header p {
+    margin: 5px 0;
+}
+
+.datos-principales {
+    border: 1px solid #000;
+    padding: 15px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+}
+
+.datos-principales p {
+    margin: 5px 0;
+}
+
+.firmas {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 50px;
+}
+
+.firma {
+    text-align: center;
+    width: 200px;
+}
+
+.firma p {
+    margin: 5px 0;
+}
+
+.usuario-emision {
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    font-size: 0.8em;
+    color: #666;
+}
+
+.usuario-emision p {
+    margin: 0;
+} 
