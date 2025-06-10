@@ -21,13 +21,13 @@ from django.conf.urls.static import static
 from django.conf.urls import handler404, handler403
 from django.contrib.auth.views import LogoutView
 from django.views.generic import TemplateView
-from .views import CustomLoginView
+
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('admin/', admin.site.urls),
-    path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    path('login/', include('autenticacion.urls', namespace='autenticacion')),
     path('afiliados/', include('afiliados.urls', namespace='afiliados')),
     path('consultas/', include('consultas.urls', namespace='consultas')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -14,7 +14,7 @@ from .models import Afiliado, ObraSocial
 
 class ListaAfiliadosView(LoginRequiredMixin, ListView):
     model = Afiliado
-    template_name = 'afiliado/lista_afiliados.html'
+    template_name = 'afiliados/lista_afiliados.html'
     context_object_name = 'afiliados'
     paginate_by = 10
 
@@ -27,6 +27,9 @@ class ListaAfiliadosView(LoginRequiredMixin, ListView):
                 Q(afiliado__nrodoc__icontains=q) |
                 Q(afiliado__cuil__icontains=q)
             )
+        
+       
+        # Filtrar por estado de afiliado
         return queryset
 
 class ImportarAfiliadosView(LoginRequiredMixin, FormView):
