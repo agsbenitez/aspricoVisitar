@@ -70,7 +70,7 @@ TEMPLATES = [
     },
 ]
 
-OGIN_URL = 'login'  # URL a la que se redirige si no está logueado
+LOGIN_URL = 'login'  # URL a la que se redirige si no está logueado
 LOGIN_REDIRECT_URL = 'home'  # Vista a la que va después de iniciar sesión
 LOGOUT_REDIRECT_URL = 'login'  # Vista a la que va después de hacer logout
 
@@ -81,13 +81,25 @@ WSGI_APPLICATION = 'visitar.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+"""
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'visitar_db',
+        'USER': 'agsbenitez',
+        'PASSWORD': 'mastera953',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

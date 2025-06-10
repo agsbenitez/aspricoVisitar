@@ -42,19 +42,14 @@ class ImportarAfiliadosView(LoginRequiredMixin, FormView):
         Verifica si existe un afiliado con el mismo CUIL o nrodoc.
         Retorna una tupla (existe_duplicado, mensaje_error)
         """
-        cuil = str(cuil).strip()
         nrodoc = str(nrodoc).strip()
         
         # Si el CUIL es válido (no es '0' ni está vacío), buscar por CUIL
-        if cuil and cuil != '0':
-            if Afiliado.objects.filter(cuil=cuil).exists():
-                return True, f'CUIL {cuil} ya existe'
-        # Si el CUIL no es válido, buscar por nrodoc
-        elif nrodoc:
+        if nrodoc:
             if Afiliado.objects.filter(nrodoc=nrodoc).exists():
                 return True, f'Número de documento {nrodoc} ya existe'
         else:
-            return True, 'No se proporcionó ni CUIL ni número de documento válido'
+            return True, 'No se proporcionó número de documento válido'
             
         return False, None
 
@@ -133,7 +128,6 @@ class ImportarAfiliadosView(LoginRequiredMixin, FormView):
                     try:
                         # Verificar duplicados usando el nuevo método
                         es_duplicado, mensaje_error = self._verificar_duplicado(
-                            row['cuil'],
                             row['nrodoc']
                         )
                         

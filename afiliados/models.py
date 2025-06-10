@@ -56,6 +56,8 @@ class Afiliado(models.Model):
     cuotas_deu = models.CharField(max_length=255)
     fechanac = models.CharField(max_length=255)
     incluido = models.CharField(max_length=255)
+    baja = models.BooleanField(default=False)
+    fecha_importacion = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'Afiliado'
