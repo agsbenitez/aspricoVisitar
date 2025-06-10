@@ -13,6 +13,7 @@ class ObraSocial(models.Model):
     def __str__(self):
         return f"{self.os_nombre} ({self.os_id})"
 
+
 class Afiliado(models.Model):
     obra_social = models.ForeignKey(
         ObraSocial,
@@ -23,8 +24,8 @@ class Afiliado(models.Model):
     numero = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255)
     tipodoc_co = models.CharField(max_length=255)
-    nrodoc = models.CharField(max_length=255)
-    cuil = models.CharField(max_length=255, unique=True)
+    nrodoc = models.CharField(max_length=255, unique=True)
+    cuil = models.CharField(max_length=255, unique=True, null=True, blank=True)
     sexo = models.CharField(max_length=255)
     edad = models.CharField(max_length=255)
     nomplan = models.CharField(max_length=255)
@@ -65,3 +66,10 @@ class Afiliado(models.Model):
 
     def __str__(self):
         return f"{self.nombre} - {self.nrodoc}"
+
+
+class AfiliadoHistorialObraSocial(models.Model):
+    afiliado = models.ForeignKey(Afiliado, on_delete=models.CASCADE)
+    obra_social = models.ForeignKey(ObraSocial, on_delete=models.PROTECT)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField(null=True, blank=True)

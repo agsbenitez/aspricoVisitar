@@ -14,7 +14,8 @@ class Consulta(models.Model):
         Afiliado,
         on_delete=models.PROTECT,
         related_name='consultas_afiliado',
-        to_field='cuil'
+        to_field='nrodoc',
+        help_text='Afiliado al que se le emite la orden de prestación'
     )
     usuario = models.ForeignKey(
         User,

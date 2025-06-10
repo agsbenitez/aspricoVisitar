@@ -7,9 +7,10 @@ from django.urls import reverse_lazy
 from django.db import transaction, IntegrityError
 from django.db.models import Q
 import pandas as pd
-import os
+import os, traceback, logging
 from .forms import ImportarAfiliadosForm
-from .models import Afiliado, ObraSocial
+from .models import Afiliado, ObraSocial, AfiliadoHistorialObraSocial
+from django.utils import timezone
 
 
 class ListaAfiliadosView(LoginRequiredMixin, ListView):
@@ -37,43 +38,31 @@ class ImportarAfiliadosView(LoginRequiredMixin, FormView):
     form_class = ImportarAfiliadosForm
     success_url = reverse_lazy('afiliados:importar_afiliados')
 
-    def _verificar_duplicado(self, cuil, nrodoc):
-        """
-        Verifica si existe un afiliado con el mismo CUIL o nrodoc.
-        Retorna una tupla (existe_duplicado, mensaje_error)
-        """
-        nrodoc = str(nrodoc).strip()
-        
-        # Si el CUIL es válido (no es '0' ni está vacío), buscar por CUIL
-        if nrodoc:
-            if Afiliado.objects.filter(nrodoc=nrodoc).exists():
-                return True, f'Número de documento {nrodoc} ya existe'
-        else:
-            return True, 'No se proporcionó número de documento válido'
-            
-        return False, None
+    
 
     def form_valid(self, form):
+        logger = logging.getLogger(__name__)
+        log_path = os.path.join('logs', 'import_afiliados.log')
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        file_handler = logging.FileHandler(log_path)
+        file_handler.setLevel(logging.WARNING)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        logger.addHandler(file_handler)
+
+        fecha_actual = timezone.now().date()
+        afiliados_vistos = set()
+
         try:
             archivo = self.request.FILES['archivo_excel']
-            # Determinar el motor según la extensión del archivo
             extension = os.path.splitext(archivo.name)[1].lower()
-            
-            if extension == '.xls':
-                engine = 'xlrd'  # Para archivos .xls (Excel 97-2003)
-            elif extension == '.xlsx':
-                engine = 'openpyxl'  # Para archivos .xlsx (Excel 2007+)
-            else:
-                raise ValueError(f'Formato de archivo no soportado: {extension}')
+            engine = 'xlrd' if extension == '.xls' else 'openpyxl' if extension == '.xlsx' else None
+            if not engine:
+                raise ValueError(f"Formato de archivo no soportado: {extension}")
 
-            # Leer el archivo Excel con el motor específico
             df = pd.read_excel(archivo, engine=engine)
-            
-            # Verificar que el DataFrame no esté vacío
             if df.empty:
                 raise ValueError('El archivo Excel está vacío')
 
-            # Verificar que las columnas necesarias estén presentes
             columnas_requeridas = [
                 'os_id', 'os_nombre', 'ben_id', 'numero', 'nombre', 
                 'tipodoc_co', 'nrodoc', 'cuil', 'sexo', 'edad',
@@ -86,102 +75,103 @@ class ImportarAfiliadosView(LoginRequiredMixin, FormView):
                 'estado_afi', 'observa', 'cuotas_deu', 'fechanac',
                 'incluido'
             ]
+
             columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
             if columnas_faltantes:
-                raise ValueError(f'Faltan las siguientes columnas: {", ".join(columnas_faltantes)}')
-            
-            # Estadísticas de la importación
-            total = 0
-            duplicados = 0
-            creados = 0
+                raise ValueError(f'Faltan columnas: {", ".join(columnas_faltantes)}')
+
+            total, creados, actualizados, cambios_os = 0, 0, 0, 0
             errores = []
             obras_sociales_creadas = 0
-            obras_sociales_existentes = 0
+            obras_sociales_dict = {}
 
-            with transaction.atomic():
-                # PASO 1: Poblar tabla de Obras Sociales
-                # Obtener obras sociales únicas del DataFrame
-                obras_sociales_df = df[['os_id', 'os_nombre']].drop_duplicates()
-                
-                # Crear diccionario de obras sociales para referencia rápida
-                obras_sociales_dict = {}
-                
-                for _, row in obras_sociales_df.iterrows():
-                    os_id = str(row['os_id']).strip()
-                    os_nombre = str(row['os_nombre']).strip()
-                    
-                    obra_social, created = ObraSocial.objects.get_or_create(
-                        os_id=os_id,
-                        defaults={'os_nombre': os_nombre}
-                    )
-                    
-                    if created:
-                        obras_sociales_creadas += 1
-                    else:
-                        obras_sociales_existentes += 1
-                    
-                    obras_sociales_dict[os_id] = obra_social
+            obras_sociales_df = df[['os_id', 'os_nombre']].drop_duplicates()
+            for _, row in obras_sociales_df.iterrows():
+                os_id, os_nombre = str(row['os_id']).strip(), str(row['os_nombre']).strip()
+                obra_social, created = ObraSocial.objects.get_or_create(
+                    os_id=os_id,
+                    defaults={'os_nombre': os_nombre}
+                )
+                obras_sociales_dict[os_id] = obra_social
+                if created:
+                    obras_sociales_creadas += 1
 
-                # PASO 2: Crear Afiliados
-                for index, row in df.iterrows():
-                    total += 1
-                    try:
-                        # Verificar duplicados usando el nuevo método
-                        es_duplicado, mensaje_error = self._verificar_duplicado(
-                            row['nrodoc']
-                        )
-                        
-                        if es_duplicado:
-                            duplicados += 1
-                            errores.append(f'Fila {index + 2}: {mensaje_error}')
-                            continue
-
-                        # Obtener la obra social del diccionario
+            for index, row in df.iterrows():
+                total += 1
+                try:
+                    with transaction.atomic():
+                        nrodoc = str(row['nrodoc']).strip()
                         os_id = str(row['os_id']).strip()
                         obra_social = obras_sociales_dict[os_id]
 
-                        # Preparar datos del afiliado
-                        datos_afiliado = {}
-                        for campo in columnas_requeridas:
-                            if campo not in ['os_id', 'os_nombre']:  # Excluir campos de obra social
-                                valor = row[campo]
-                                if pd.isna(valor) or valor is None:
-                                    datos_afiliado[campo] = ''
-                                else:
-                                    datos_afiliado[campo] = str(valor).strip()
+                        afiliado = Afiliado.objects.filter(nrodoc=nrodoc).first()
+                        datos_afiliado = {
+                            campo: ('' if pd.isna(row[campo]) else str(row[campo]).strip())
+                            for campo in columnas_requeridas
+                            if campo not in ['os_id', 'os_nombre']
+                        }
 
-                        # Crear afiliado
-                        Afiliado.objects.create(obra_social=obra_social, **datos_afiliado)
-                        creados += 1
+                        # Procesar cuil: dejar como None si no es válido
+                        cuil_valido = datos_afiliado.get('cuil', '').strip()
+                        if cuil_valido in ('', '0', '0.0'):
+                            datos_afiliado['cuil'] = None
 
-                    except IntegrityError as e:
-                        errores.append(f'Error de integridad en fila {index + 2}: {str(e)}')
-                    except Exception as e:
-                        errores.append(f'Error en fila {index + 2}: {str(e)}')
+                        if afiliado:
+                            afiliados_vistos.add(afiliado.nrodoc)
+                            if afiliado.obra_social != obra_social:
+                                AfiliadoHistorialObraSocial.objects.create(
+                                    afiliado=afiliado,
+                                    obra_social_anterior=afiliado.obra_social,
+                                    obra_social_nueva=obra_social
+                                )
+                                cambios_os += 1
+                                afiliado.obra_social = obra_social
 
-            # Mostrar mensajes de resultado
+                            for campo, valor in datos_afiliado.items():
+                                setattr(afiliado, campo, valor)
+                            afiliado.baja = False
+                            afiliado.fecha_importacion = fecha_actual
+                            afiliado.save()
+                            actualizados += 1
+                        else:
+                            nuevo = Afiliado.objects.create(
+                                obra_social=obra_social,
+                                baja=False,
+                                fecha_importacion=fecha_actual,
+                                **datos_afiliado
+                            )
+                            afiliados_vistos.add(nuevo.nrodoc)
+                            creados += 1
+
+                except Exception as e:
+                    error_msg = f'Fila {index + 2}: {str(e)}'
+                    print(traceback.format_exc())
+                    errores.append(error_msg)
+                    logger.warning(error_msg)
+
+            try:
+                with transaction.atomic():
+                    Afiliado.objects.exclude(nrodoc__in=afiliados_vistos).update(baja=True)
+            except Exception as e:
+                error_msg = f"Error al actualizar bajas: {str(e)}"
+                print(traceback.format_exc())
+                errores.append(error_msg)
+                logger.warning(error_msg)
+
             messages.success(
                 self.request,
-                f'Importación completada.\n'
-                f'Obras Sociales - Creadas: {obras_sociales_creadas}, Existentes: {obras_sociales_existentes}\n'
-                f'Afiliados - Total procesados: {total}, Creados: {creados}, Duplicados: {duplicados}'
+                f"Importación completa: Obras Sociales nuevas: {obras_sociales_creadas}, "
+                f"Afiliados creados: {creados}, actualizados: {actualizados}, cambios de obra social: {cambios_os}"
             )
-            
             if errores:
-                messages.warning(
-                    self.request,
-                    f'Se encontraron {len(errores)} errores durante la importación. '
-                    'Revise los detalles a continuación:'
-                )
-                for error in errores[:10]:  # Mostrar solo los primeros 10 errores
+                messages.warning(self.request, f"Errores detectados: {len(errores)}")
+                for error in errores[:10]:
                     messages.warning(self.request, error)
-                if len(errores) > 10:
-                    messages.warning(
-                        self.request,
-                        f'... y {len(errores) - 10} errores más. Revise el archivo.'
-                    )
 
         except Exception as e:
-            messages.error(self.request, f'Error al procesar el archivo: {str(e)}')
+            error_msg = f"Error al procesar el archivo: {str(e)}"
+            print(traceback.format_exc())
+            messages.error(self.request, error_msg)
+            logger.error(error_msg)
 
         return super().form_valid(form)
