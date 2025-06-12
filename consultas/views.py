@@ -91,7 +91,8 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         """Establece valores iniciales para el formulario"""
         initial = super().get_initial()
-        initial['prestador'] = 'RED ASPRICO ACE'
+        # se anula esta linea paara tomarl el valore del campo he imprimirlo 
+        initial['prestador'] = ''
         initial['fecha_emision'] = timezone.now()
         return initial
 
@@ -102,7 +103,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
         if self.request.method == 'GET':
             context['consulta'] = Consulta(
                 fecha_emision=timezone.now(),
-                prestador='RED ASPRICO ACE',
+                prestador='',  # Asignar el nombre de usuario del prestador
                 nro_de_orden=Consulta.objects.count() + 1  # Número tentativo
             )
         return context
@@ -115,7 +116,6 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
             # Asignar datos básicos
             form.instance.usuario = self.request.user
             form.instance.fecha_emision = timezone.now()
-            form.instance.prestador = 'RED ASPRICO ACE'
             
             # Log de los datos del formulario
             logger.info(f'Datos del formulario: {form.cleaned_data}')

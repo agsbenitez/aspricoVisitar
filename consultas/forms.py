@@ -26,8 +26,13 @@ class ConsultaForm(forms.ModelForm):
 
     class Meta:
         model = Consulta
-        fields = ['diagnostico', 'afiliado_id']
+        fields = ['prestador','diagnostico', 'afiliado_id']
         widgets = {
+            'prestador': forms.TextInput(attrs={
+                'class': 'form-control',
+                'required': True,
+                'placeholder': 'Ingrese el nombre del prestador o institución'
+            }),
             'diagnostico': forms.TextInput(attrs={
                 'class': 'form-control',
                 'required': False,
@@ -37,6 +42,7 @@ class ConsultaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['prestador'].label = 'Prestador'    
         self.fields['diagnostico'].label = 'Diagnóstico'
         logger.info('Inicializando ConsultaForm')
 
@@ -52,13 +58,13 @@ class ConsultaForm(forms.ModelForm):
                 logger.error('No se recibió ID de afiliado')
                 raise forms.ValidationError('Debe seleccionar un afiliado válido')
             
-            afiliado = Afiliado.objects.get(cuil=afiliado_id)  # Cambiamos a buscar por CUIL
+            afiliado = Afiliado.objects.get(nrodoc=afiliado_id)  # Cambiamos a buscar por CUIL
             logger.info(f'Afiliado encontrado: {afiliado.nombre}')
             
             # Asignar datos del afiliado
             self.instance.afiliado = afiliado
             self.instance.obra_social = afiliado.obra_social
-            self.instance.prestador = 'RED ASPRICO ACE'
+            # self.instance.prestador = 'RED ASPRICO ACE'
             
             logger.info('Datos del formulario procesados correctamente')
             

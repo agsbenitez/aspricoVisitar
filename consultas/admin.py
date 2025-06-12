@@ -4,7 +4,7 @@ from .models import Consulta
 @admin.register(Consulta)
 class ConsultaAdmin(admin.ModelAdmin):
     list_display = ['nro_de_orden', 'afiliado_nombre', 'obra_social_nombre', 
-                   'prestador', 'fecha_emision', 'fecha_prestacion', 'activo']
+                   'prestador','diagnostico', 'fecha_emision', 'fecha_prestacion', 'activo']
     list_filter = ['activo', 'fecha_emision', 'fecha_prestacion', 'usuario']
     search_fields = ['nro_de_orden', 'afiliado__nombre', 'afiliado__cuil', 
                     'obra_social__os_nombre', 'prestador']
@@ -16,7 +16,7 @@ class ConsultaAdmin(admin.ModelAdmin):
     fieldsets = [
         ('Información Principal', {
             'fields': [
-                'obra_social', 'afiliado', 'prestador', 'activo'
+                'obra_social', 'afiliado', 'prestador', 'diagnostico', 'activo'
             ]
         }),
         ('Fechas', {

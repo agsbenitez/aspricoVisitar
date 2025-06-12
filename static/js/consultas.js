@@ -157,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(this);
 
         if (!formData.get('afiliado_id')) {
+            console.log('afiliado_id', formData.get('afiliado_id'));
             mostrarEstado('danger', 'Error: No se ha seleccionado un afiliado');
             return;
         }
@@ -190,6 +191,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitBtn.disabled = true;
                     campoBusqueda.value = '';
                     document.getElementById('afiliado_id').value = '';
+                    if (document.getElementById('id_prestador')) {
+                        document.getElementById('id_prestador').value = '';
+                    }
                     if (document.getElementById('id_diagnostico')) {
                         document.getElementById('id_diagnostico').value = '';
                     }
@@ -217,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     btnConfirmarAfiliado.addEventListener('click', function() {
         if (afiliadoSeleccionado) {
-            document.getElementById('afiliado_id').value = afiliadoSeleccionado.cuil;
+            document.getElementById('afiliado_id').value = afiliadoSeleccionado.nrodoc;
             submitBtn.disabled = false;
             mostrarEstado('success', `Afiliado seleccionado: ${afiliadoSeleccionado.nombre}`);
             modalConfirmarAfiliado.hide();
