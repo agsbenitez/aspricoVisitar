@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from decouple import config, Csv
 
@@ -25,6 +25,28 @@ SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'DEBUG' if DEBUG else 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'app.log'),
+        },
+    },
+    'loggers': {
+        '': {  # Aplica a todos los módulos
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG' if DEBUG else 'WARNING',
+        },
+    },
+}
+
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv)
 
