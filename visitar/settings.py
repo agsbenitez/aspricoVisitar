@@ -48,7 +48,12 @@ LOGGING = {
 }
 
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv)
+ALLOWED_HOSTS = [
+	'127.0.0.1',
+	'localhost',
+	'192.168.0.73',
+	'bonosvisitar.com'
+	]
 
 
 # Application definition
