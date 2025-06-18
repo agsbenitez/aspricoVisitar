@@ -24,9 +24,9 @@ class ListaAfiliadosView(LoginRequiredMixin, ListView):
         q = self.request.GET.get('q')
         if q:
             queryset = queryset.filter(
-                Q(afiliado__nombre__icontains=q) |
-                Q(afiliado__nrodoc__icontains=q) |
-                Q(afiliado__cuil__icontains=q)
+                Q(nombre__icontains=q) |
+                Q(nrodoc__icontains=q) |
+                Q(cuil__icontains=q)
             )
         
        
