@@ -12,7 +12,9 @@
         </div>
         <div class="datos-header">
             <p><strong>Nº de Orden:</strong> {{ consulta.nro_de_orden }}</p>
-            <p class="small text-muted">(vigencia 30 días desde la fecha de emisión)</p>
+            <p class="small text-muted" style="white-space: nowrap;">
+                (vigencia 30 días desde la fecha de emisión)
+            </p>
             <p><strong>Fecha:</strong> {{ consulta.fecha_emision|date:"d/m/Y" }}</p>
         </div>
     </div>
@@ -50,6 +52,11 @@
         <div class="firma">
             <p>_______________________</p>
             <p>Firma del Afiliado</p>
+        </div>
+        <div class="row mt-3">
+            <div class="col text-center">
+                <p><strong>Fecha de Prestación:</strong> ....../....../20..</p>
+            </div>
         </div>
         <div class="firma">
             <p>_______________________</p>
