@@ -2,22 +2,35 @@
 
 <!-- Bono de Consulta -->
 <div class="bono-consulta">
-    <div class="header-bono">
-        <div class="logo-asprico">
-            <i class="fas fa-hospital fa-3x"></i>
-            <div class="logo-text">RED ASPRICO ACE</div>
+    <div class="header-bono d-flex align-items-center justify-content-between mb-4">
+    
+        <!-- Logo -->
+        <div class="flex-grow-1 text-start" style="max-width: 25%;">
+            <img src="{% static 'img/logoasprico.png' %}" alt="Logo" style="max-height: 80px;">
         </div>
-        <div class="titulo-bono">
-            <h2>BONO DE CONSULTA</h2>
+
+        <!-- Título -->
+        <div class="flex-grow-2 text-center" style="max-width: 50%;">
+            <h2 class="mb-0">BONO DE CONSULTA</h2>
         </div>
-        <div class="datos-header">
-            <p><strong>Nº de Orden:</strong> {{ consulta.nro_de_orden }}</p>
-            <p class="small text-muted" style="white-space: nowrap;">
-                (vigencia 30 días desde la fecha de emisión)
-            </p>
-            <p><strong>Fecha:</strong> {{ consulta.fecha_emision|date:"d/m/Y" }}</p>
+
+        <!-- Datos a la derecha -->
+        <div class="flex-grow-1 text-end" style="max-width: 25%;">
+            <p class="mb-1"><strong>Nº de Orden:</strong> {{ consulta.nro_de_orden }}</p>
+            
+            <p class="mb-0"><strong>Fecha:</strong> {{ consulta.fecha_emision|date:"d/m/Y" }}</p>
         </div>
+    
+
+   
+
     </div>
+    <div class="text-end mt-3">
+        <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
+            (vigencia 30 días desde la fecha de emisión)
+        </p>
+    </div>  
+
 
     <div class="datos-principales">
         <div class="row">

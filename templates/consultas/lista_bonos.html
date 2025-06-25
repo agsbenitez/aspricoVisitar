@@ -64,14 +64,19 @@
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="window.imprimirBono('{{ consulta.nro_de_orden }}')">
-                                        <i class="fas fa-print"></i>
-                                    </button>
                                     {% if consulta.activo %}
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="window.anularBono('{{ consulta.nro_de_orden }}')">
-                                        <i class="fas fa-ban"></i>
-                                    </button>
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="window.imprimirBono('{{ consulta.nro_de_orden }}')">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="window.anularBono('{{ consulta.nro_de_orden }}')">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                            <i class="fas fa-print"></i>
+                                        </button>
                                     {% endif %}
+                                    
                                 </div>
                             </td>
                         </tr>
