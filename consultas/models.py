@@ -61,12 +61,12 @@ class Consulta(models.Model):
         help_text='Indica si la orden de prestación está activa o fue dada de baja'
     )
 
-    tipo = models.models.CharField(max_length=10,
-                                   choices=TIPO_CHOICES,
-        default=TIPO_CONSULTA,
-        help_text='Tipo de orden: Consulta médica o Bono de prácticas'
-    )
-    
+    tipo = models.CharField(max_length=10,
+                            choices=TIPO_CHOICES,
+                            default=TIPO_CONSULTA,
+                            help_text='Tipo de orden: Consulta médica o Bono de prácticas'
+                            )
+
     codigo_seguridad = models.CharField(
         max_length=255,
         blank=True,
