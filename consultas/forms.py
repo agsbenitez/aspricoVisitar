@@ -23,6 +23,17 @@ class ConsultaForm(forms.ModelForm):
         widget=forms.HiddenInput(),
         required=True
     )
+    # Campo oculto para el tipo de bono
+    # Esto se puede usar para diferenciar entre tipos de consultas o bonos
+    # Por ejemplo, si se desea agregar más tipos en el futuro
+    # Aquí se establece un valor por defecto de 'consulta'
+    # que puede ser modificado según las necesidades del sistema
+    tipo = forms.CharField(
+        widget=forms.HiddenInput(),
+        initial='consulta',
+        required=True,
+        label='Tipo de Bono'
+    )
 
     class Meta:
         model = Consulta

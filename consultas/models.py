@@ -1,9 +1,21 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from afiliados.models import Afiliado, ObraSocial
 from datetime import timedelta
+from django.core import signing
+from django.conf import settings
+
 
 class Consulta(models.Model):
+
+    TIPO_CONSULTA  = 'consulta'
+    TIPO_PRACTICA  = 'practica'
+    TIPO_CHOICES = [
+        (TIPO_CONSULTA, 'Consulta médica'),
+        (TIPO_PRACTICA, 'Bono de prácticas'),
+    ]
+
     # Relaciones
     obra_social = models.ForeignKey(
         ObraSocial, 
@@ -49,6 +61,19 @@ class Consulta(models.Model):
         help_text='Indica si la orden de prestación está activa o fue dada de baja'
     )
 
+    tipo = models.models.CharField(max_length=10,
+                                   choices=TIPO_CHOICES,
+        default=TIPO_CONSULTA,
+        help_text='Tipo de orden: Consulta médica o Bono de prácticas'
+    )
+    
+    codigo_seguridad = models.CharField(
+        max_length=255,
+        blank=True,
+        editable=False,
+        help_text='Código de seguridad único para la orden de prestación'
+    )
+
     class Meta:
         verbose_name = 'Consulta'
         verbose_name_plural = 'Consultas'
@@ -76,3 +101,18 @@ class Consulta(models.Model):
         """Verifica si la orden está dentro del período de vigencia"""
         from django.utils import timezone
         return self.activo and self.fecha_emision <= timezone.now() <= self.fecha_vencimiento
+    
+    def save(self, *args, **kwargs):
+        # Antes de guardar por primera vez:
+        if not self.codigo_seguridad:
+            payload = {
+                "orden": self.nro_de_orden,
+                "cuil": self.afiliado.nrodoc,
+                "fecha": self.fecha_emision.strftime("%Y-%m-%d"),
+            }
+            signer = signing.Signer(
+                key=settings.SECRET_KEY,
+                salt="bono-consulta"
+            )
+            self.codigo_seguridad = signer.sign_object(payload)
+        super().save(*args, **kwargs)

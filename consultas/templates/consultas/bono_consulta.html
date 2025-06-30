@@ -80,5 +80,12 @@
     <div class="usuario-emision">
         <p>Emitido por: {{ consulta.usuario.get_full_name|default:consulta.usuario.username }}</p>
     </div>
+
+    <div class="text-center mt-3">
+        <!--<p><strong>Código de seguridad:</strong> {{ consulta.codigo_seguridad }}</p>
+         Si querés un QR: -->
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data={{ consulta.codigo_seguridad }}&size=100x100" 
+        alt="QR de verificación">
+    </div>
 </div>
 

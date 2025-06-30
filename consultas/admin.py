@@ -3,7 +3,7 @@ from .models import Consulta
 
 @admin.register(Consulta)
 class ConsultaAdmin(admin.ModelAdmin):
-    list_display = ['nro_de_orden', 'afiliado_nombre', 'obra_social_nombre', 
+    list_display = ['nro_de_orden', 'afiliado_nombre', 'obra_social_nombre', 'codigo_seguridad', 
                    'prestador','diagnostico', 'fecha_emision', 'fecha_prestacion', 'activo']
     list_filter = ['activo', 'fecha_emision', 'fecha_prestacion', 'usuario']
     search_fields = ['nro_de_orden', 'afiliado__nombre', 'afiliado__cuil', 
