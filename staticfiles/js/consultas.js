@@ -221,6 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     btnConfirmarAfiliado.addEventListener('click', function() {
         if (afiliadoSeleccionado) {
+            console.log('Afiliado seleccionado:', afiliadoSeleccionado.nrodoc);
             document.getElementById('afiliado_id').value = afiliadoSeleccionado.nrodoc;
             submitBtn.disabled = false;
             mostrarEstado('success', `Afiliado seleccionado: ${afiliadoSeleccionado.nombre}`);
@@ -232,6 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalElement = document.getElementById(modalId);
         modalElement.addEventListener('hidden.bs.modal', function () {
             if (!afiliadoSeleccionado) {
+                console.log('Modal cerrado sin seleccionar afiliado');
                 campoBusqueda.value = '';
                 mostrarEstado('info', 'Ingrese apellido, DNI o CUIL del afiliado y presione Enter');
             }

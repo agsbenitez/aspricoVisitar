@@ -88,6 +88,8 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
     template_name = 'consultas/nueva_consulta.html'
     success_url = reverse_lazy('consultas:nueva_consulta')
 
+    bono_type = 'consulta'
+
     def get_initial(self):
         """Establece valores iniciales para el formulario"""
         initial = super().get_initial()
@@ -95,6 +97,11 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
         initial['prestador'] = ''
         initial['fecha_emision'] = timezone.now()
         return initial
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.setdefault('initial', {})['tipo'] = self.bono_type
+        return kwargs
 
     def get_context_data(self, **kwargs):
         """Agrega datos adicionales al contexto"""
@@ -111,6 +118,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         """Procesa el formulario válido"""
         try:
+            form.instance.tipo = self.bono_type
             logger.info('Iniciando form_valid en NuevaConsultaView')
             
             # Asignar datos básicos

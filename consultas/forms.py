@@ -28,13 +28,13 @@ class ConsultaForm(forms.ModelForm):
     # Por ejemplo, si se desea agregar más tipos en el futuro
     # Aquí se establece un valor por defecto de 'consulta'
     # que puede ser modificado según las necesidades del sistema
-    tipo = forms.CharField(
+    """tipo = forms.CharField(
         widget=forms.HiddenInput(),
         initial='consulta',
         required=True,
         label='Tipo de Bono'
     )
-
+"""
     class Meta:
         model = Consulta
         fields = ['prestador','diagnostico', 'afiliado_id']
