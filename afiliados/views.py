@@ -12,7 +12,10 @@ from .forms import ImportarAfiliadosForm
 from .models import Afiliado, ObraSocial, AfiliadoHistorialObraSocial
 from django.utils import timezone
 
-
+"""
+ListaAfiliadosView: Muestra una lista paginada de afiliados con funcionalidad de búsqueda y 
+filtrado por estado.
+"""
 class ListaAfiliadosView(LoginRequiredMixin, ListView):
     model = Afiliado
     template_name = 'afiliados/lista_afiliados.html'
@@ -20,7 +23,7 @@ class ListaAfiliadosView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Afiliado.objects.all().order_by('nombre')
+        queryset = Afiliado.objects.select_related('obra_social').all().order_by('nombre')
         q = self.request.GET.get('q')
         if q:
             queryset = queryset.filter(
@@ -32,7 +35,9 @@ class ListaAfiliadosView(LoginRequiredMixin, ListView):
        
         # Filtrar por estado de afiliado
         return queryset
-
+"""
+ImportarAfiliadosView: Vista para importar afiliados desde un archivo Excel.
+"""
 class ImportarAfiliadosView(LoginRequiredMixin, FormView):
     template_name = 'afiliados/importar.html'
     form_class = ImportarAfiliadosForm

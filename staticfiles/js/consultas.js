@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <th>DNI</th>
                 <th>CUIL</th>
                 <th>Obra Social</th>
+                <th>Monto Coseguro___</th>
                 <th>Acciones</th>
             </tr>
         `;
@@ -87,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${afiliado.nrodoc}</td>
                 <td>${afiliado.cuil}</td>
                 <td>${afiliado.obra_social}</td>
+                <td>${afiliado.obra_social_monto_coseguro}</td>
                 <td>
                     <button class="btn btn-sm btn-primary btn-seleccionar" data-afiliado='${JSON.stringify(afiliado)}'>
                         Seleccionar

@@ -28,11 +28,14 @@
    
 
     </div>
-    <div class="text-end mt-3">
-        <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
-            (vigencia 30 días desde la fecha de emisión)
-        </p>
-    </div>  
+        <div class="d-flex justify-content-between mt-3">
+            <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
+                monto coseguro: ${{ consulta.afiliado.obra_social.monto_coseguro|floatformat:2 }} (a cargo del afiliado)
+            </p>
+            <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
+                (vigencia 30 días desde la fecha de emisión)
+            </p>
+        </div>  
 
 
     <div class="datos-principales">

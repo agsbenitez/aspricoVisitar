@@ -46,7 +46,7 @@
                     <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
                         Generar Orden
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="imprimirBono()">
+                    <button type="button" class="btn btn-secondary" id="imprimirBtn" onclick="window.imprimirBono('{{ consulta.nro_de_orden }}')" disabled>
                         Imprimir
                     </button>
                 </div>
@@ -108,7 +108,9 @@
             </div>
             <div class="modal-body">
                 <h6>Datos del Afiliado:</h6>
+                
                 <div id="modal-info-afiliado" class="mt-3">
+                    
                     <!-- Aquí se mostrarán los datos del afiliado -->
                 </div>
             </div>
@@ -129,4 +131,5 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Nuestro código JavaScript -->
 <script src="{% static 'js/consultas.js' %}"></script>
+<script defer src="{% static 'js/lista_bonos.js' %}"></script>
 {% endblock %} 

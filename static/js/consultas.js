@@ -1,3 +1,8 @@
+
+/*
+Funcion para imprimi los bonos generados, es llamada desde al boton de imprimir
+en la plantilla de bono_consulta.html
+*/
 function imprimirBono() {
     const bonoContainer = document.getElementById('bono-container');
     if (!bonoContainer || !bonoContainer.innerHTML.trim()) {
@@ -19,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     const consultaForm = document.getElementById('consultaForm');
     const btnConfirmarAfiliado = document.getElementById('btnConfirmarAfiliado');
+    const imprimirBtn = document.getElementById('imprimirBtn');
     
     const modalResultados = new bootstrap.Modal(document.getElementById('modalResultados'));
     const modalNoEncontrado = new bootstrap.Modal(document.getElementById('modalNoEncontrado'));
@@ -134,6 +140,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <th>Obra Social:</th>
                     <td>${afiliado.obra_social}</td>
                 </tr>
+                <tr>
+                    <th>Monto Coseguro:</th>
+                    <td>${afiliado.monto_coseguro}</td>
+                </tr>
             </table>
         `;
         afiliadoSeleccionado = afiliado;
@@ -187,6 +197,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const bonoContainer = document.getElementById('bono-container');
                 if (bonoContainer) {
                     bonoContainer.innerHTML = data.html;
+                    //imprimirBtn.disabled = false;
+                    //console.log('habilitado boton imprimir  ', imprimirBtn.disabled);
                     mostrarEstado('success', 'Bono generado exitosamente');
                     submitBtn.disabled = true;
                     campoBusqueda.value = '';

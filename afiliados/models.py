@@ -5,6 +5,9 @@ from django.db import models
 class ObraSocial(models.Model):
     os_id = models.CharField(max_length=255, unique=True)
     os_nombre = models.CharField(max_length=255)
+    coseguro = models.BooleanField(default=True)
+    monto_coseguro = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
 
     class Meta:
         verbose_name = 'Obra Social'

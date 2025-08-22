@@ -3,7 +3,7 @@ from .models import Afiliado, ObraSocial
 
 @admin.register(ObraSocial)
 class ObraSocialAdmin(admin.ModelAdmin):
-    list_display = ('os_id', 'os_nombre')
+    list_display = ('os_id', 'os_nombre', 'coseguro', 'monto_coseguro')
     search_fields = ('os_id', 'os_nombre')
     ordering = ('os_nombre',)
 

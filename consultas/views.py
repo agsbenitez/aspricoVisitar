@@ -18,7 +18,9 @@ from .forms import ConsultaForm
 from afiliados.models import Afiliado
 
 # Create your views here.
-
+"""
+ListaBonosView: Muestra una lista paginada de bonos de consulta con funcionalidad de búsqueda.
+"""
 class ListaBonosView(LoginRequiredMixin, ListView):
     model = Consulta
     template_name = 'consultas/lista_bonos.html'
@@ -35,7 +37,9 @@ class ListaBonosView(LoginRequiredMixin, ListView):
                 Q(afiliado__cuil__icontains=q)
             )
         return queryset
-
+"""
+anular_bono: funcion para anular un bono de consulta mediante una petición POST.
+"""
 @login_required
 def anular_bono(request, bono_id):
     if request.method == 'POST':
@@ -65,6 +69,8 @@ def anular_bono(request, bono_id):
         'error': 'Método no permitido'
     })
 
+""""imprimir_bono: vista para mostrar el bono en formato de impresión."""
+
 @login_required
 def imprimir_bono(request, bono_id=None):
     """Vista para mostrar el bono en formato de impresión"""
@@ -82,6 +88,9 @@ def imprimir_bono(request, bono_id=None):
         'consulta': bono
     })
 
+"""
+NuevaConsultaView: Vista para crear una nueva consulta con soporte AJAX para búsquedas y creación.
+"""
 class NuevaConsultaView(LoginRequiredMixin, CreateView):
     model = Consulta
     form_class = ConsultaForm
@@ -174,9 +183,9 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
         """Maneja las peticiones POST, incluyendo búsquedas AJAX"""
-        logger.info(f'Método POST recibido - Es AJAX: {request.headers.get("X-Requested-With") == "XMLHttpRequest"}')
-        logger.info(f'Headers recibidos: {request.headers}')
-        logger.info(f'Datos POST recibidos: {request.POST}')
+        #logger.info(f'Método POST recibido - Es AJAX: {request.headers.get("X-Requested-With") == "XMLHttpRequest"}')
+        #logger.info(f'Headers recibidos: {request.headers}')
+        #logger.info(f'Datos POST recibidos: {request.POST}')
 
         # Si es una petición AJAX
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -186,7 +195,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
                 termino = request.POST.get('buscar_afiliado', '').strip()
                 if termino:
                     try:
-                        afiliados = Afiliado.objects.filter(
+                        afiliados = Afiliado.objects.select_related('obra_social').filter(
                             Q(nombre__icontains=termino) |
                             Q(nrodoc__icontains=termino) |
                             Q(cuil__icontains=termino)
@@ -197,7 +206,8 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
                             'nombre': afiliado.nombre,
                             'nrodoc': afiliado.nrodoc,
                             'cuil': afiliado.cuil,
-                            'obra_social': afiliado.obra_social.os_nombre
+                            'obra_social': afiliado.obra_social.os_nombre,
+                            'monto_coseguro': afiliado.obra_social.monto_coseguro
                         } for afiliado in afiliados]
                         
                         return JsonResponse({'resultados': resultados}, content_type='application/json')
