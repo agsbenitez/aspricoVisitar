@@ -3,18 +3,9 @@
 Funcion para imprimi los bonos generados, es llamada desde al boton de imprimir
 en la plantilla de bono_consulta.html
 */
-function imprimirBono() {
-    const bonoContainer = document.getElementById('bono-container');
-    if (!bonoContainer || !bonoContainer.innerHTML.trim()) {
-        alert('Primero debe generar un bono para poder imprimirlo.');
-        return;
-    }
-    
-    const ventanaImpresion = window.open('/consultas/imprimir-bono/', '_blank');
-    ventanaImpresion.onload = function() {
-        ventanaImpresion.print();
-    };
-}
+
+
+
 
 document.addEventListener('DOMContentLoaded', function() {
     let afiliadoSeleccionado = null;
@@ -24,11 +15,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     const consultaForm = document.getElementById('consultaForm');
     const btnConfirmarAfiliado = document.getElementById('btnConfirmarAfiliado');
-    const imprimirBtn = document.getElementById('imprimirBtn');
     
     const modalResultados = new bootstrap.Modal(document.getElementById('modalResultados'));
     const modalNoEncontrado = new bootstrap.Modal(document.getElementById('modalNoEncontrado'));
     const modalConfirmarAfiliado = new bootstrap.Modal(document.getElementById('modalConfirmarAfiliado'));
+
+    const imprimirBtn = document.getElementById('imprimirBtn');
+    const bonoContainer = document.getElementById('bono-container');
+
+
+    // Instalar el handler UNA sola vez (por si generás varios bonos sin recargar)
+    if (imprimirBtn && !imprimirBtn.dataset.bound) {
+      imprimirBtn.addEventListener('click', () => {
+        // Leer el nro desde el HTML recién inyectado
+        const span = document.querySelector('#bono-container #nro-orden');
+        const nro = span ? span.textContent.trim() : '';
+
+        if (!nro) {
+          alert('Primero generá el bono para poder imprimir.');
+          return;
+        }
+        // Usá tu función global que ya funciona con nroOrden
+        window.imprimirBono(nro);
+      });
+      // Marcamos que ya ligamos el handler para no duplicarlo
+      imprimirBtn.dataset.bound = 'true';
+    }
+
 
     function realizarBusqueda(e) {
         e.preventDefault();
@@ -158,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     consultaForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        console.log('Enviando formulario de consulta...');
         if (!afiliadoSeleccionado) {
             mostrarEstado('warning', 'Debe seleccionar un afiliado primero');
             return;
@@ -195,10 +209,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.success && data.html) {
                 const bonoContainer = document.getElementById('bono-container');
+                
                 if (bonoContainer) {
                     bonoContainer.innerHTML = data.html;
-                    //imprimirBtn.disabled = false;
-                    //console.log('habilitado boton imprimir  ', imprimirBtn.disabled);
+                    const nro = document.getElementById('nro-orden').textContent.trim()
+                    imprimirBtn.disabled = false;
+                    console.log('habilitado boton imprimir  ', imprimirBtn.disabled);
                     mostrarEstado('success', 'Bono generado exitosamente');
                     submitBtn.disabled = true;
                     campoBusqueda.value = '';

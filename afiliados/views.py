@@ -150,7 +150,6 @@ class ImportarAfiliadosView(LoginRequiredMixin, FormView):
 
                 except Exception as e:
                     error_msg = f'Fila {index + 2}: {str(e)}'
-                    print(traceback.format_exc())
                     errores.append(error_msg)
                     logger.warning(error_msg)
 

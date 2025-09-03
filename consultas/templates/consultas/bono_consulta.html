@@ -1,98 +1,98 @@
 {% load static %}
 
 <!-- Bono de Consulta -->
-<div class="bono-consulta">
-    <div class="header-bono d-flex align-items-center justify-content-between mb-4">
+    <div class="bono-consulta">
+        <div class="header-bono d-flex align-items-center justify-content-between mb-4">
+        
+            <!-- Logo -->
+            <div class="flex-grow-1 text-start" style="max-width: 25%;">
+                <img src="{% static 'img/logoasprico.png' %}" alt="Logo" style="max-height: 80px;">
+            </div>
+
+            <div class="titulo-bono text-center" style="flex:0 0 50%;">
+        <h2 class="mb-1">BONO DE CONSULTA</h2>
+        <p class="mb-0 subtitulo">
+        AGRUPACIÓN DE SANATORIOS PRIVADOS DE LA PROVINCIA DE CORRIENTES<br>
+        RIVADAVIA 1398 – CORRIENTES (3400) – TEL: (03794)-431717 – MÓVIL 3794-574299<br>
+        </p>
+        </div>
+
+            <!-- Datos a la derecha -->
+            <div class="flex-grow-1 text-end" style="max-width: 25%;">
+                <p class="mb-1"><strong>Nº de Orden:</strong><span id="nro-orden"> {{ consulta.nro_de_orden }}</span></p>
+                
+                <p class="mb-0"><strong>Fecha:</strong> {{ consulta.fecha_emision|date:"d/m/Y" }}</p>
+            </div>
+        
+
     
-        <!-- Logo -->
-        <div class="flex-grow-1 text-start" style="max-width: 25%;">
-            <img src="{% static 'img/logoasprico.png' %}" alt="Logo" style="max-height: 80px;">
+
         </div>
-
-        <div class="titulo-bono text-center" style="flex:0 0 50%;">
-    <h2 class="mb-1">BONO DE CONSULTA</h2>
-    <p class="mb-0 subtitulo">
-      AGRUPACIÓN DE SANATORIOS PRIVADOS DE LA PROVINCIA DE CORRIENTES<br>
-      RIVADAVIA 1398 – CORRIENTES (3400) – TEL: (03794)-431717 – MÓVIL 3794-574299<br>
-    </p>
-    </div>
-
-        <!-- Datos a la derecha -->
-        <div class="flex-grow-1 text-end" style="max-width: 25%;">
-            <p class="mb-1"><strong>Nº de Orden:</strong> {{ consulta.nro_de_orden }}</p>
-            
-            <p class="mb-0"><strong>Fecha:</strong> {{ consulta.fecha_emision|date:"d/m/Y" }}</p>
-        </div>
-    
-
-   
-
-    </div>
-        <div class="d-flex justify-content-between mt-3">
-            <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
-                monto coseguro: ${{ consulta.afiliado.obra_social.monto_coseguro|floatformat:2 }} (a cargo del afiliado)
-            </p>
-            <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
-                (vigencia 30 días desde la fecha de emisión)
-            </p>
-        </div>  
+            <div class="d-flex justify-content-between mt-3">
+                <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
+                    monto coseguro: ${{ consulta.afiliado.obra_social.monto_coseguro|floatformat:2 }} (a cargo del afiliado)
+                </p>
+                <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
+                    (vigencia 30 días desde la fecha de emisión)
+                </p>
+            </div>  
 
 
-    <div class="datos-principales">
-        <div class="row">
-            <div class="col-8">
-                <p><strong>Apellido y Nombre:</strong> {{ consulta.afiliado.nombre }}</p>
+        <div class="datos-principales">
+            <div class="row">
+                <div class="col-8">
+                    <p><strong>Apellido y Nombre:</strong> {{ consulta.afiliado.nombre }}</p>
+                </div>
+                <div class="col-4">
+                    <p><strong>DNI:</strong> {{ consulta.afiliado.nrodoc }}</p>
+                </div>
             </div>
-            <div class="col-4">
-                <p><strong>DNI:</strong> {{ consulta.afiliado.nrodoc }}</p>
+            <div class="row">
+                <div class="col-8">
+                    <p><strong>Obra Social:</strong> {{ consulta.afiliado.obra_social.os_nombre }}</p>
+                </div>
+                <div class="col-4">
+                    <p><strong>Nº Afiliado:</strong> {{ consulta.afiliado.numero }}</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    {% if consulta.prestador%}
+                        <p><strong>Prestador:</strong> {{ consulta.prestador }}</p>
+                    {% endif %}
+                    {% if consulta.diagnostico %}
+                    <p><strong>Diagnóstico:</strong> {{ consulta.diagnostico }}</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-8">
-                <p><strong>Obra Social:</strong> {{ consulta.afiliado.obra_social.os_nombre }}</p>
+        <br>
+        <br>    
+        <div class="firmas">
+            <div class="firma">
+                <p>_______________________</p>
+                <p>Firma del Afiliado</p>
             </div>
-            <div class="col-4">
-                <p><strong>Nº Afiliado:</strong> {{ consulta.afiliado.numero }}</p>
+            <div class="row mt-3">
+                <div class="col text-center">
+                    <p><strong>Fecha de Prestación:</strong> ....../....../20..</p>
+                </div>
             </div>
-        </div>
-        <div class="row">
-            <div class="col-12">
-                {% if consulta.prestador%}
-                    <p><strong>Prestador:</strong> {{ consulta.prestador }}</p>
-                {% endif %}
-                {% if consulta.diagnostico %}
-                <p><strong>Diagnóstico:</strong> {{ consulta.diagnostico }}</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <br>
-    <br>    
-    <div class="firmas">
-        <div class="firma">
-            <p>_______________________</p>
-            <p>Firma del Afiliado</p>
-        </div>
-        <div class="row mt-3">
-            <div class="col text-center">
-                <p><strong>Fecha de Prestación:</strong> ....../....../20..</p>
+            <div class="firma">
+                <p>_______________________</p>
+                <p>Firma del Profesional</p>
             </div>
         </div>
-        <div class="firma">
-            <p>_______________________</p>
-            <p>Firma del Profesional</p>
-        </div>
-    </div>
 
-    <div class="usuario-emision">
-        <p>Emitido por: {{ consulta.usuario.get_full_name|default:consulta.usuario.username }}</p>
-    </div>
+        <div class="usuario-emision">
+            <p>Emitido por: {{ consulta.usuario.get_full_name|default:consulta.usuario.username }}</p>
+        </div>
 
-    <div class="text-center mt-3">
-        <!--<p><strong>Código de seguridad:</strong> {{ consulta.codigo_seguridad }}</p>
-         Si querés un QR: -->
-        <img src="https://api.qrserver.com/v1/create-qr-code/?data={{ consulta.codigo_seguridad }}&size=100x100" 
-        alt="QR de verificación">
+        <div class="text-center mt-3">
+            <!--<p><strong>Código de seguridad:</strong> {{ consulta.codigo_seguridad }}</p>
+            Si querés un QR: -->
+            <img src="https://api.qrserver.com/v1/create-qr-code/?data={{ consulta.codigo_seguridad }}&size=100x100" 
+            alt="QR de verificación">
+        </div>
     </div>
-</div>
 

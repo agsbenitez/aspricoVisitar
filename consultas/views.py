@@ -89,7 +89,8 @@ def imprimir_bono(request, bono_id=None):
     })
 
 """
-NuevaConsultaView: Vista para crear una nueva consulta con soporte AJAX para búsquedas y creación.
+NuevaConsultaView:
+ Vista para crear una nueva consulta con soporte AJAX para búsquedas y creación.
 """
 class NuevaConsultaView(LoginRequiredMixin, CreateView):
     model = Consulta
@@ -151,7 +152,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
                 
                 return JsonResponse({
                     'success': True,
-                    'html': html_content
+                    'html': html_content,
                 }, json_dumps_params={'ensure_ascii': False})
             
             return super().form_valid(form)
