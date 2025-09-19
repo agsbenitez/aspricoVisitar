@@ -8,9 +8,15 @@
 {% block content %}
 <div class="container mt-4">
     <div class="card">
-        <div class="card-header">
-            <h3 class="mb-0">Nueva Orden de Consulta</h3>
-        </div>
+        {% if tipo == 'consulta' %}
+            <div class="card-header">
+                <h3 class="mb-0">Nueva Orden de Consulta</h3>
+            </div>
+        {% else %}
+            <div class="card-header">
+                <h3 class="mb-0">Nueva Orden de Práctica</h3>
+            </div>
+        {% endif %}
         
         <div class="card-body">
             <form method="post" id="consultaForm">
