@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Consulta
+from .models import Consulta, Practica
 
 @admin.register(Consulta)
 class ConsultaAdmin(admin.ModelAdmin):
@@ -38,3 +38,10 @@ class ConsultaAdmin(admin.ModelAdmin):
     def obra_social_nombre(self, obj):
         return obj.obra_social_nombre
     obra_social_nombre.short_description = 'Obra Social'
+
+
+@admin.register(Practica)
+class PracticaAdmin(admin.ModelAdmin):
+    list_display = ['codPractica', 'descripcion']
+    search_fields = ['codPractica', 'descripcion']
+    list_per_page = 20

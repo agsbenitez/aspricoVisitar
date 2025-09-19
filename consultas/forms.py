@@ -1,10 +1,54 @@
 from django import forms
+from dal import autocomplete
+from django.forms import inlineformset_factory
 from .models import Consulta
 from afiliados.models import Afiliado
+from .models import Practica, PracticaConsulta
 from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
+
+"""Formulario para buscar una práctica específica
+Este formulario utiliza un campo de selección con autocompletado para buscar prácticas
+por código o nombre. El widget de autocompletado permite al usuario escribir y filtrar
+las prácticas disponibles, facilitando la selección de una práctica específica.
+"""
+class PracticaLookupForm(forms.Form):
+    practica = forms.ModelChoiceField(
+        queryset=Practica.objects.all(),
+        widget=autocomplete.ModelSelect2(
+            url='consultas:practica-autocomplete',
+            attrs={
+                'data-placeholder': 'Escribí código o nombre…',
+                'data-minimum-input-length': 1,
+                'class': 'form-control',
+                'style': 'width: 300px;' 
+                
+            }
+        ),
+        label='Buscar un condenada Práctica'
+    )
+
+class PracticaConsultaForm(forms.ModelForm):
+    class Meta:
+        model = PracticaConsulta
+        fields = ('consulta', 'practica')
+        widgets = {
+            'practica': autocomplete.ModelSelect2(
+                url='consultas:practica-autocomplete',
+                attrs={'data-minimum-input-length': 3}
+            ),
+            'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+ItemPracticaFormSet = inlineformset_factory(
+    Consulta,
+    PracticaConsulta,
+    form=PracticaConsultaForm,
+    extra=0,               # arrancamos vacío, lo llenará JS
+    can_delete=True
+)
 
 class ConsultaForm(forms.ModelForm):
     # Campo de búsqueda para afiliado

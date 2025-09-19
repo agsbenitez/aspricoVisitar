@@ -1,5 +1,7 @@
+from dal import autocomplete
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import CreateView, ListView
+from django.views.generic.edit import FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
@@ -13,9 +15,23 @@ from django.contrib import messages
 
 logger = logging.getLogger(__name__)
 
-from .models import Consulta
-from .forms import ConsultaForm
+from .models import Consulta, Practica
+from .forms import ConsultaForm, ItemPracticaFormSet, PracticaLookupForm
 from afiliados.models import Afiliado
+
+"""Vista para buscar una práctica específica
+Esta vista utiliza un formulario para buscar prácticas por código o nombre.
+El formulario se renderiza en una plantilla y permite al usuario seleccionar
+una práctica específica. Al enviar el formulario, se procesa la búsqueda
+y se muestra el resultado en la misma página."""
+class PracticaLookupView(FormView):
+    template_name = 'consultas/lookup_practica.html'
+    form_class = PracticaLookupForm
+    success_url = reverse_lazy('consultas:lookup-practica')
+
+    def form_valid(self, form):
+        # para este ejemplo, simplemente volvesmos a mostrar el form
+        return super().form_valid(form)
 
 # Create your views here.
 """
@@ -98,7 +114,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
     template_name = 'consultas/nueva_consulta.html'
     success_url = reverse_lazy('consultas:nueva_consulta')
 
-    bono_type = 'consulta'
+    bono_type = None  # 'consulta' o 'practica', se establece en urls.py
 
     def get_initial(self):
         """Establece valores iniciales para el formulario"""
@@ -116,12 +132,26 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         """Agrega datos adicionales al contexto"""
         context = super().get_context_data(**kwargs)
+        context['tipo'] = self.bono_type
+
         # Si es una nueva consulta (GET), creamos un objeto temporal para mostrar
-        if self.request.method == 'GET':
+        if self.request.method == 'GET' and self.bono_type == 'consulta':
+            context['tipo'] = 'consulta'
             context['consulta'] = Consulta(
                 fecha_emision=timezone.now(),
                 prestador='',  # Asignar el nombre de usuario del prestador
                 nro_de_orden=Consulta.objects.count() + 1  # Número tentativo
+            )
+        elif self.request.method == 'GET' and self.bono_type == 'practica':
+            context['tipo'] = 'practica'
+            context['consulta'] = Consulta(
+                fecha_emision=timezone.now(),
+                prestador='',  # Asignar el nombre de usuario del prestador
+                nro_de_orden=Consulta.objects.count() + 1  # Número tentativo
+            )
+            context['formset'] = ItemPracticaFormSet(
+                instance = None,
+                prefix='items_practica'
             )
         return context
 
@@ -234,5 +264,29 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
                     'errors': 'Tipo de petición no reconocida'
                 }, content_type='application/json')
         
+        if self.bono_type == 'practica':
+            formset = ItemPracticaFormSet(
+                request.POST,
+                instance=None,
+                prefix='items_practica'
+            )
+        else:
+            formset = None
         # Si no es AJAX, procesar normalmente
         return super().post(request, *args, **kwargs)
+
+
+"""Vista para autocompletar prácticas
+Esta vista utiliza el paquete django-autocomplete-light para proporcionar
+un autocompletado de prácticas basado en el código o la descripción.
+El usuario puede buscar prácticas y seleccionar una de la lista desplegable."""
+class PracticaAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Practica.objects.all()
+        print(f"QuerySet inicial: {qs.query}")
+        if self.q:
+            qs = qs.filter(
+                Q(codPractica__icontains=self.q) |
+                Q(descripcion__icontains=self.q)
+            )
+        return qs

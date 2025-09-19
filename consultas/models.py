@@ -116,3 +116,49 @@ class Consulta(models.Model):
             )
             self.codigo_seguridad = signer.sign_object(payload)
         super().save(*args, **kwargs)
+
+class Practica(models.Model):
+    codPractica = models.CharField(
+        max_length=9,
+        verbose_name='Código de Práctica',
+        unique=True,
+        help_text='Código de la práctica asociada'
+    )
+    descripcion = models.CharField(
+        max_length=255,
+        help_text='Descripción de la práctica asociada'
+    )
+    class Meta:
+        verbose_name = 'Codigo de Práctica'
+        verbose_name_plural = 'Prácticas'
+        
+    def __str__(self):
+        return f"{self.codPractica} - {self.descripcion}"
+
+
+class PracticaConsulta(models.Model):
+    consulta = models.ForeignKey(
+        Consulta,
+        on_delete=models.CASCADE,
+        related_name='practicas_consulta',
+        help_text='Pactica as asociadas a la consulta'
+    )
+    practica = models.ForeignKey(
+        Practica,
+        on_delete=models.CASCADE,
+        related_name='practicas',
+        help_text='Práctica asociada a la consulta'
+    )
+    timeStamp = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Fecha y hora de creación del registro'
+    )
+
+    class Meta:
+        verbose_name = 'Práctica en Bono'
+        verbose_name_plural = 'Prácticas en Bono'
+        # Evita duplicados exactos: una misma práctica no debería repetirse dos veces
+        unique_together = ['consulta', 'practica']
+
+    def __str__(self):
+        return f"{self.practica.nombre}  + {self.cantidad}"
