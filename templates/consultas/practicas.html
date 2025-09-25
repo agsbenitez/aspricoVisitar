@@ -1,82 +1,124 @@
+{% for form in formset %}
 
-
-{% block content %}
-  <!-- ... el resto de tu formulario ... -->
-  {% if tipo == 'practica' %}
-    <button 
-      type="button" 
-      class="btn btn-secondary mb-3" 
-      data-bs-toggle="modal" 
-      data-bs-target="#modalPracticas"
-    >Agregar Práctica</button>
-
-    <!-- Aquí se renderiza el inline formset -->
-    <div id="practicas-formset">
-      
-      {{ formset.management_form }}
-      {% for subform in formset %}
-        <div class="row practica-item">
-          <div class="col-6"></div>
-          
-          {{ formset.empty_form.practica.label_tag }}
-          {{ formset.empty_form.practica }}
-          
-        </div>
-      {% endfor %}
+  <!-- Tu bloque real -->
+  <div class="row practica-item g-2 align-items-center mb-2">
+    <div class="col-8">
+      {{ form.practica }}
+      <input type="text" class="form-control practica-display" readonly placeholder="Práctica seleccionada">
     </div>
+    <div class="col-2">
+      {{ form.DELETE }}
+      <label for="{{ form.DELETE.id_for_label }}">Eliminar</label>
+    </div>
+  </div>
+{% endfor %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.media }}            {# por si tu form principal aporta assets #}
+  {{ formset.media }}         {# no usa DAL, pero por si hay otros widgets #}
+  {{ formset.management_form }}
 
-    <!-- template oculto para clonar -->
-    <script type="text/template" id="empty-form">
-      <div class="row practica-item">
+  <!-- Contenedor del formset -->
+  <div id="items-practica">
+    {% for form in formset %}
+      <div class="row practica-item g-2 align-items-center mb-2">
         <div class="col-8">
-          <label for="id_items_practica-__prefix__-practica">Práctica:</label>
-          <select name="items_practica-__prefix__-practica"
-            id="id_items_practica-__prefix__-practica"
-            hinden>
-          </select>
+          {{ form.practica }}
+          <input type="text" class="form-control practica-display" readonly placeholder="Práctica seleccionada">
         </div>
-        <div class="col-1">
-          <input type="checkbox"
-             name="items_practica-__prefix__-DELETE"
-             id="id_items_practica-__prefix__-DELETE">
+        <div class="col-2">
+          {{ form.DELETE }}
+          <label for="{{ form.DELETE.id_for_label }}" class="me-2">Eliminar</label>
+          <!-- Botón UX para marcar borrado sin tocar TOTAL_FORMS -->
+          <button type="button" class="btn btn-link text-danger p-0 btn-quitar">Quitar</button>
+          <!-- (opcional) Botón para revertir -->
+          <button type="button" class="btn btn-link p-0 btn-restaurar d-none">Deshacer</button>
         </div>
       </div>
-    </script>
-  {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- Botones -->
+  <div class="d-flex gap-2 mt-3">
+    <button id="abrir-modal-busqueda" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalBusquedaPractica">
+      Buscar y agregar práctica(s)
+    </button>
+
+  </div>
+
+  <!-- Template oculto para clonar filas -->
+  <template id="empty-form">
+    <div class="row practica-item g-2 align-items-center mb-2">
+      <div class="col-8">
+        {{ formset.empty_form.practica }}
+        <input type="text" class="form-control practica-display" readonly placeholder="Práctica seleccionada">
+      </div>
+      <div class="col-2">
+        <input type="checkbox"
+               class="form-check-input"
+               name="items_practica-__prefix__-DELETE"
+               id="id_items_practica-__prefix__-DELETE">
+               
+        <label class="form-check-label" for="id_items_practica-__prefix__-DELETE">Eliminar</label>
+        <!-- Botón UX para marcar borrado sin tocar TOTAL_FORMS -->
+        <button type="button" class="btn btn-link text-danger p-0 btn-quitar">Quitar</button>
+        <!-- (opcional) Botón para revertir -->
+        <button type="button" class="btn btn-link p-0 btn-restaurar d-none">Deshacer</button>
+        
+      </div>
+    </div>
+  </template>
+</form>
 
 
 
-  <!-- Modal de búsqueda de prácticas -->
-  <div class="modal fade" id="modalPracticas" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Buscar Práctica</h5>
-          
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          {# Aquí usamos el empty_form.practica que viene con el widget de DAL #}
-          <select
-            id="id_practica"
-            class="django-autocomplete-light"
-            data-minimum-input-length="1"
-            data-ajax--url="{% url 'consultas:practica-autocomplete' %}"
-            style="width:100%"
-            data-placeholder="Escribe código o nombre..."
-          >
-            <option></option>
-          </select>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
+<!-- Modal 1: campo de búsqueda -->
+<div class="modal fade" id="modalBusquedaPractica" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Buscar prácticas</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <input id="input-busqueda-practica" type="text" class="form-control" placeholder="Código o nombre…">
+        <small class="text-muted">Presioná Enter para buscar</small>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-buscar-practica" type="button" class="btn btn-primary">Buscar</button>
       </div>
     </div>
   </div>
+</div>
 
-  
-{% endblock %}
-
+<!-- Modal 2: resultados (selección múltiple) -->
+<div class="modal fade" id="modalResultadosPractica" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Resultados</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover mb-0">
+            <thead>
+              <tr>
+                <th style="width:2rem;"><input type="checkbox" id="chk-todos"></th>
+                <th>Código</th>
+                <th>Descripción</th>
+               </tr>
+            </thead>
+            <tbody id="tbody-resultados"></tbody>
+          </table>
+        </div>
+        <div class="p-2"><small id="estado-busqueda" class="text-muted"></small></div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-agregar-seleccionadas" type="button" class="btn btn-success">Agregar seleccionadas</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 

@@ -166,3 +166,6 @@
 .usuario-emision p {
     margin: 0;
 } 
+
+
+.row-deleted { opacity: .5; }

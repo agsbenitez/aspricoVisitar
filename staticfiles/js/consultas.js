@@ -148,8 +148,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    //funcion para enviar el formulario, submit
     consultaForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        console.log('Enviando formulario de consulta');
         if (!afiliadoSeleccionado) {
             mostrarEstado('warning', 'Debe seleccionar un afiliado primero');
             return;

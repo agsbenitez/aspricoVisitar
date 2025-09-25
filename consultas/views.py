@@ -16,14 +16,14 @@ from django.contrib import messages
 logger = logging.getLogger(__name__)
 
 from .models import Consulta, Practica
-from .forms import ConsultaForm, ItemPracticaFormSet, PracticaLookupForm
+from .forms import ConsultaForm, ItemPracticaFormSet#, PracticaLookupForm
 from afiliados.models import Afiliado
 
 """Vista para buscar una práctica específica
 Esta vista utiliza un formulario para buscar prácticas por código o nombre.
 El formulario se renderiza en una plantilla y permite al usuario seleccionar
 una práctica específica. Al enviar el formulario, se procesa la búsqueda
-y se muestra el resultado en la misma página."""
+y se muestra el resultado en la misma página.
 class PracticaLookupView(FormView):
     template_name = 'consultas/lookup_practica.html'
     form_class = PracticaLookupForm
@@ -32,6 +32,8 @@ class PracticaLookupView(FormView):
     def form_valid(self, form):
         # para este ejemplo, simplemente volvesmos a mostrar el form
         return super().form_valid(form)
+"""
+
 
 # Create your views here.
 """
@@ -290,3 +292,13 @@ class PracticaAutocomplete(autocomplete.Select2QuerySetView):
                 Q(descripcion__icontains=self.q)
             )
         return qs
+    
+
+def search_practicas(request):
+    q = (request.GET.get('q') or '').strip()
+    qs = Practica.objects.all()
+    if q:
+        qs = qs.filter(Q(codPractica__icontains=q) | Q(descripcion__icontains=q))
+    qs = qs.order_by('codPractica')[:50]  # limita resultados
+    data = [{"id": p.id, "codPractica": p.codPractica, "descripcion": p.descripcion} for p in qs]
+    return JsonResponse({"results": data})

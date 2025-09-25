@@ -13,34 +13,38 @@ logger = logging.getLogger(__name__)
 Este formulario utiliza un campo de selección con autocompletado para buscar prácticas
 por código o nombre. El widget de autocompletado permite al usuario escribir y filtrar
 las prácticas disponibles, facilitando la selección de una práctica específica.
+
+class ItemPracticaForm(forms.ModelForm):
+    class Meta:
+        model = Practica
+        fields = ['practica']  # el FK a Practica
+        widgets = {
+            'practica': forms.Select(attrs={'class': 'form-select'})
+        }
+        labels = {
+            'practica': 'Práctica'
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # queryset completo (o filtrado si hace falta)
+        self.fields['practica'].queryset = Practica.objects.all().order_by('codPractica')
+        # cómo mostrar cada opción en el select
+        self.fields['practica'].label_from_instance = (
+            lambda obj: f"{obj.codPractica} - {obj.descripcion}"
+        )
 """
-class PracticaLookupForm(forms.Form):
-    practica = forms.ModelChoiceField(
-        queryset=Practica.objects.all(),
-        widget=autocomplete.ModelSelect2(
-            url='consultas:practica-autocomplete',
-            attrs={
-                'data-placeholder': 'Escribí código o nombre…',
-                'data-minimum-input-length': 1,
-                'class': 'form-control',
-                'style': 'width: 300px;' 
-                
-            }
-        ),
-        label='Buscar un condenada Práctica'
-    )
+
 
 class PracticaConsultaForm(forms.ModelForm):
     class Meta:
         model = PracticaConsulta
-        fields = ('consulta', 'practica')
+        fields = ['practica']
         widgets = {
-            'practica': autocomplete.ModelSelect2(
-                url='consultas:practica-autocomplete',
-                attrs={'data-minimum-input-length': 3}
-            ),
-            'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+            'practica': forms.HiddenInput()
         }
+        labels = {'practica': 'Práctica'}
+
 
 ItemPracticaFormSet = inlineformset_factory(
     Consulta,
