@@ -1,3 +1,9 @@
+window.ENDPOINTS = {
+    buscarAfiliados: "{% url 'consultas:ajax_buscar_afiliados' %}",
+    buscarPracticas: "{% url 'consultas:ajax_buscar_practicas' %}",
+  };
+
+
 function imprimirBono() {
     const bonoContainer = document.getElementById('bono-container');
     if (!bonoContainer || !bonoContainer.innerHTML.trim()) {
@@ -24,39 +30,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalNoEncontrado = new bootstrap.Modal(document.getElementById('modalNoEncontrado'));
     const modalConfirmarAfiliado = new bootstrap.Modal(document.getElementById('modalConfirmarAfiliado'));
 
-    function realizarBusqueda(e) {
-        e.preventDefault();
-        const searchTerm = campoBusqueda.value.trim();
-        
-        if (searchTerm.length < 3) {
-            mostrarEstado('warning', 'Ingrese al menos 3 caracteres para buscar');
-            return;
-        }
 
+    campoBusqueda.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();              // evita el submit del form
+        realizarBusquedaAfiliado();      // dispara la búsqueda AJAX
+      }
+    });
+
+
+    async function realizarBusqueda(e) {
+        e?.preventDefault?.();
+            
+        const searchTerm = campoBusqueda.value.trim();
+        if (searchTerm.length < 3) {
+          mostrarEstado('warning', 'Ingrese al menos 3 caracteres para buscar');
+          return;
+        }
+    
         mostrarEstado('info', 'Buscando...');
-        
-        fetch('', {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrfToken
-            },
-            body: new URLSearchParams({
-                'buscar_afiliado': searchTerm
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.resultados.length === 0) {
-                modalNoEncontrado.show();
-                return;
-            }
-            mostrarResultadosEnModal(data.resultados);
-        })
-        .catch(error => {
-            mostrarEstado('danger', 'Error al realizar la búsqueda');
-        });
-    }
+    
+        try {
+          const url = `${window.ENDPOINTS.buscarAfiliados}?q=${encodeURIComponent(searchTerm)}`;
+          const resp = await fetch(url, {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' } // opcional
+          });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.json();
+      
+          // Según tu view: usa "results" (mi propuesta) o "resultados" (tu formato anterior)
+          const resultados = data.results || data.resultados || [];
+          if (resultados.length === 0) {
+            modalNoEncontrado.show();
+            mostrarEstado('warning', 'Sin resultados');
+            return;
+          }
+          mostrarResultadosEnModal(resultados);
+          mostrarEstado('success', `Se encontraron ${resultados.length} afiliado(s)`);
+        } catch (err) {
+          console.error(err);
+          mostrarEstado('danger', 'Error al realizar la búsqueda');
+        }
+}
 
     function mostrarEstado(tipo, mensaje) {
         estadoBusqueda.innerHTML = `<div class="alert alert-${tipo} mb-0 py-1">${mensaje}</div>`;

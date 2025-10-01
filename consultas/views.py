@@ -4,9 +4,10 @@ from django.views.generic import CreateView, ListView
 from django.views.generic.edit import FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse_lazy
+from django.urls import reverse
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.db import transaction
 from django.db.models import Q
 from django.core.paginator import Paginator
 import logging
@@ -16,23 +17,10 @@ from django.contrib import messages
 logger = logging.getLogger(__name__)
 
 from .models import Consulta, Practica
-from .forms import ConsultaForm, ItemPracticaFormSet#, PracticaLookupForm
+from .forms import ConsultaForm, ItemPracticaFormSet
+
 from afiliados.models import Afiliado
 
-"""Vista para buscar una práctica específica
-Esta vista utiliza un formulario para buscar prácticas por código o nombre.
-El formulario se renderiza en una plantilla y permite al usuario seleccionar
-una práctica específica. Al enviar el formulario, se procesa la búsqueda
-y se muestra el resultado en la misma página.
-class PracticaLookupView(FormView):
-    template_name = 'consultas/lookup_practica.html'
-    form_class = PracticaLookupForm
-    success_url = reverse_lazy('consultas:lookup-practica')
-
-    def form_valid(self, form):
-        # para este ejemplo, simplemente volvesmos a mostrar el form
-        return super().form_valid(form)
-"""
 
 
 # Create your views here.
@@ -106,10 +94,125 @@ def imprimir_bono(request, bono_id=None):
         'consulta': bono
     })
 
+def is_ajax(request):
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+"""
+NuevaConsultaView:
+ Vista para crear una nueva consulta creación.
+version refactorizada
+ """
+
+
+class BaseNuevaBonoView(LoginRequiredMixin, CreateView):
+    """
+    Base común: renderiza el form principal de Consulta
+    y agrega 'tipo' al contexto para que la plantilla incluya blocks condicionales.
+    """
+    form_class = ConsultaForm
+    template_name = "consultas/nueva_consulta.html"  # plantilla común
+    bono_type = None  # 'consulta' | 'practica'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["tipo"] = self.bono_type
+        
+        if self.request.method == "GET":
+            ctx["consulta"] = Consulta(
+                fecha_emision=timezone.now(),
+                prestador=self.request.user.get_full_name() if self.request.user.is_authenticated else "",
+                nro_de_orden=Consulta.objects.count() + 1
+            )
+
+        return ctx
+
+
+class NuevaConsultaView(BaseNuevaBonoView):
+    """Vista para crear una nueva consulta médica.
+    Extiende la base común y establece bono_type a 'consulta'."""
+    bono_type = "consulta"
+
+    
+    
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST, request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.usuario = request.user
+            obj.save()
+            self.object = obj
+
+            if is_ajax(request):
+                html_content = render(
+                    request,
+                    "consultas/bono_consulta.html",
+                    {"consulta": self.object, "success": True}
+                ).content.decode("utf-8")
+
+                return JsonResponse({
+                    "success": True,
+                    "html": html_content,
+                }, json_dumps_params={"ensure_ascii": False})
+
+            # Si no es AJAX, flujo normal (redirigir o lo que tu base haga)
+            return super().post(request, *args, **kwargs)
+
+        # form inválido
+        if is_ajax(request):
+            return JsonResponse({"success": False, "errors": form.errors}, status=400)
+        
+        
+        return self.render_to_response(self.get_context_data(form=form))
+
+
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.usuario = self.request.user   # asigna el usuario autenticado
+        obj.save()
+        self.object = obj
+        return super().form_valid(form)  
+
+class NuevaPracticaView(BaseNuevaBonoView):
+    """Vista para crear una nueva consulta con prácticas.
+    Extiende la base común y establece bono_type a 'practica'.
+    Maneja un formset adicional para las prácticas asociadas."""
+    bono_type = "practica"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        if self.request.method == "POST":
+            ctx["formset"] = ItemPracticaFormSet(
+                self.request.POST,
+                prefix="items_practica",
+            )
+        else:
+            ctx["formset"] = ItemPracticaFormSet(
+                prefix="items_practica",
+            )
+        return ctx
+
+    def form_valid(self, form):
+        # Además del form principal, validar/guardar el formset
+        ctx = self.get_context_data(form=form)
+        formset = ctx["formset"]
+
+        if not formset.is_valid():
+            return self.form_invalid(form)
+
+        with transaction.atomic():
+            self.object = form.save()          # crea la cabecera Consulta
+            formset.instance = self.object     # liga las líneas al padre
+            formset.save()                     # crea/actualiza/elimina líneas
+        return redirect(self.get_success_url())
+
 """
 NuevaConsultaView:
  Vista para crear una nueva consulta con soporte AJAX para búsquedas y creación.
-"""
+
+ Esta Clase pasará a estar decrepita y se implamentará una nnueva clase por ello se la 
+ comenta
+
 class NuevaConsultaView(LoginRequiredMixin, CreateView):
     model = Consulta
     form_class = ConsultaForm
@@ -119,7 +222,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
     bono_type = None  # 'consulta' o 'practica', se establece en urls.py
 
     def get_initial(self):
-        """Establece valores iniciales para el formulario"""
+        #Establece valores iniciales para el formulario
         initial = super().get_initial()
         # se anula esta linea paara tomarl el valore del campo he imprimirlo 
         initial['prestador'] = ''
@@ -132,7 +235,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def get_context_data(self, **kwargs):
-        """Agrega datos adicionales al contexto"""
+        #Agrega datos adicionales al contexto
         context = super().get_context_data(**kwargs)
         context['tipo'] = self.bono_type
 
@@ -158,7 +261,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        """Procesa el formulario válido"""
+        #Procesa el formulario válido
         try:
             form.instance.tipo = self.bono_type
             logger.info('Iniciando form_valid en NuevaConsultaView')
@@ -205,7 +308,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
             raise
 
     def form_invalid(self, form):
-        """Log de errores cuando el formulario es inválido"""
+        #Log de errores cuando el formulario es inválido
         logger.error(f'Errores en el formulario: {form.errors}')
         if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -215,7 +318,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
     def post(self, request, *args, **kwargs):
-        """Maneja las peticiones POST, incluyendo búsquedas AJAX"""
+        #Maneja las peticiones POST, incluyendo búsquedas AJAX
         #logger.info(f'Método POST recibido - Es AJAX: {request.headers.get("X-Requested-With") == "XMLHttpRequest"}')
         #logger.info(f'Headers recibidos: {request.headers}')
         #logger.info(f'Datos POST recibidos: {request.POST}')
@@ -276,7 +379,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
             formset = None
         # Si no es AJAX, procesar normalmente
         return super().post(request, *args, **kwargs)
-
+"""
 
 """Vista para autocompletar prácticas
 Esta vista utiliza el paquete django-autocomplete-light para proporcionar
@@ -293,6 +396,36 @@ class PracticaAutocomplete(autocomplete.Select2QuerySetView):
             )
         return qs
     
+def search_afiliados(request):
+    """
+    GET /consultas/ajax/afiliados/?q=texto
+    Devuelve lista simple para autocompletar/buscar afiliados.
+    """
+    print("Atiende la buscqueda de afiliados via ajax")
+    if request.method != "GET":
+        return HttpResponseBadRequest("Método no permitido")
+
+    q = (request.GET.get("q") or "").strip()
+    if not q:
+        return JsonResponse({"results": []})
+
+    # Ajustá los campos de filtro a tu modelo Afiliado
+    afiliados = Afiliado.objects.select_related('obra_social').filter(
+                            Q(nombre__icontains=q) |
+                            Q(nrodoc__icontains=q) |
+                            Q(cuil__icontains=q)
+                        )[:10]  # Limitamos a 10 resultados
+
+    resultados = [{
+                            'id': afiliado.id,
+                            'nombre': afiliado.nombre,
+                            'nrodoc': afiliado.nrodoc,
+                            'cuil': afiliado.cuil,
+                            'obra_social': afiliado.obra_social.os_nombre,
+                            'monto_coseguro': afiliado.obra_social.monto_coseguro
+                        } for afiliado in afiliados]
+    
+    return JsonResponse({"results": resultados})
 
 def search_practicas(request):
     q = (request.GET.get('q') or '').strip()

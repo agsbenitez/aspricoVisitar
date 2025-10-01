@@ -146,6 +146,12 @@
 {# Assets de DAL/Select2 que el form/widget pide #}
 {{ formset.media }}{# o {{ formset.media }} si ahí está el widget #}
 <!-- Nuestro código JavaScript -->
+<script>
+    window.ENDPOINTS = {
+        buscarAfiliados: "{% url 'consultas:ajax_buscar_afiliados' %}",
+        buscarPracticas: "{% url 'consultas:ajax_buscar_practicas' %}",
+    };
+</script>
 <script defer src="{% static 'js/formset_practicas.js' %}"></script>
 <script defer src="{% static 'js/consultas.js' %}"></script>
 <script defer src="{% static 'js/bonos_common.js' %}"></script>

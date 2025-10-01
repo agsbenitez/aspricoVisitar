@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from afiliados.models import Afiliado, ObraSocial
+from django.utils import timezone
 from datetime import timedelta
 from django.core import signing
 from django.conf import settings
@@ -104,6 +105,9 @@ class Consulta(models.Model):
     
     def save(self, *args, **kwargs):
         # Antes de guardar por primera vez:
+        if not self.fecha_emision:
+            self.fecha_emision = timezone.now()
+
         if not self.codigo_seguridad:
             payload = {
                 "orden": self.nro_de_orden,

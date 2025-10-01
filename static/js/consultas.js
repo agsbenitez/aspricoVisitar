@@ -7,6 +7,7 @@ en la plantilla de bono_consulta.html
 
 
 
+
 document.addEventListener('DOMContentLoaded', function() {
     let afiliadoSeleccionado = null;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -22,6 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const imprimirBtn = document.getElementById('imprimirBtn');
     const bonoContainer = document.getElementById('bono-container');
+
+    
 
 
     // Instalar el handler UNA sola vez (por si generás varios bonos sin recargar)
@@ -43,38 +46,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
-    function realizarBusqueda(e) {
-        e.preventDefault();
-        const searchTerm = campoBusqueda.value.trim();
-        
-        if (searchTerm.length < 3) {
-            mostrarEstado('warning', 'Ingrese al menos 3 caracteres para buscar');
-            return;
-        }
+    async function realizarBusqueda(e) {
+        e?.preventDefault?.();
 
+        const searchTerm = campoBusqueda.value.trim();
+        if (searchTerm.length < 3) {
+          mostrarEstado('warning', 'Ingrese al menos 3 caracteres para buscar');
+          return;
+        }
+    
         mostrarEstado('info', 'Buscando...');
-        
-        fetch('', {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrfToken
-            },
-            body: new URLSearchParams({
-                'buscar_afiliado': searchTerm
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.resultados.length === 0) {
-                modalNoEncontrado.show();
-                return;
-            }
-            mostrarResultadosEnModal(data.resultados);
-        })
-        .catch(error => {
-            mostrarEstado('danger', 'Error al realizar la búsqueda');
-        });
+    
+        try {
+          const url = `${window.ENDPOINTS.buscarAfiliados}?q=${encodeURIComponent(searchTerm)}`;
+          const resp = await fetch(url, {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' } // opcional
+          });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.json();
+      
+          // Según tu view: usa "results" (mi propuesta) o "resultados" (tu formato anterior)
+          const resultados = data.results || data.resultados || [];
+          if (resultados.length === 0) {
+            modalNoEncontrado.show();
+            mostrarEstado('warning', 'Sin resultados');
+            return;
+          }
+          mostrarResultadosEnModal(resultados);
+          mostrarEstado('success', `Se encontraron ${resultados.length} afiliado(s)`);
+        } catch (err) {
+          console.error(err);
+          mostrarEstado('danger', 'Error al realizar la búsqueda');
+        }
     }
 
     function mostrarEstado(tipo, mensaje) {
