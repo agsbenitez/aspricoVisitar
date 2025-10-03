@@ -16,7 +16,8 @@ from django.contrib import messages
 
 logger = logging.getLogger(__name__)
 
-from .models import Consulta, Practica
+from .models import Consulta, Practica, PracticaConsulta
+from django.db.models import Prefetch
 from .forms import ConsultaForm, ItemPracticaFormSet
 
 from afiliados.models import Afiliado
@@ -80,18 +81,27 @@ def anular_bono(request, bono_id):
 @login_required
 def imprimir_bono(request, bono_id=None):
     """Vista para mostrar el bono en formato de impresión"""
+
+    qs = (Consulta.objects
+          .prefetch_related(
+              Prefetch(
+                  'practicas_consulta',
+                  queryset=PracticaConsulta.objects.select_related('practica')
+              )
+          ))
     if bono_id:
-        bono = get_object_or_404(Consulta, nro_de_orden=bono_id)
+        bono = get_object_or_404(qs, nro_de_orden=bono_id)
     else:
         # Si no se especifica ID, obtener el último bono generado por el usuario
-        bono = Consulta.objects.filter(usuario=request.user).last()
+        bono = qs.filter(usuario=request.user).last()
     
     if not bono:
         messages.error(request, 'No hay bono disponible para imprimir')
         return redirect('consultas:nueva_consulta')
         
     return render(request, 'consultas/bono_consulta_print.html', {
-        'consulta': bono
+        'consulta': bono,
+        'items_practica': bono.practicas_consulta.all(),
     })
 
 def is_ajax(request):
@@ -169,6 +179,7 @@ class NuevaConsultaView(BaseNuevaBonoView):
     def form_valid(self, form):
         obj = form.save(commit=False)
         obj.usuario = self.request.user   # asigna el usuario autenticado
+        obj.tipo = 'consulta'
         obj.save()
         self.object = obj
         return super().form_valid(form)  
@@ -178,6 +189,65 @@ class NuevaPracticaView(BaseNuevaBonoView):
     Extiende la base común y establece bono_type a 'practica'.
     Maneja un formset adicional para las prácticas asociadas."""
     bono_type = "practica"
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST, request.FILES)
+        formset = ItemPracticaFormSet(request.POST, prefix="items_practica")
+
+        if form.is_valid() and formset.is_valid():
+            with transaction.atomic():
+                obj = form.save(commit=False)
+                obj.usuario = request.user
+                obj.tipo = 'practica'
+                obj.save()
+                self.object = obj
+
+                formset.instance = self.object
+                formset.save()
+
+            if is_ajax(request):
+                items = (
+                self.object.practicas_consulta
+                .select_related("practica")
+                .order_by("id")
+            )
+
+                items_json = [
+                    {
+                        "id": it.pk,
+                        "codPractica": it.practica.codPractica,
+                        "descripcion": it.practica.descripcion,
+                    }
+                    for it in items
+                ]
+                
+                html_content = render(
+                    request,
+                    "consultas/bono_consulta.html",
+                    
+                    {"consulta": self.object,
+                     "tipo": self.bono_type,
+                     "items_practica": items_json,
+                     "success": True},
+                ).content.decode("utf-8")
+                
+                return JsonResponse({
+                    "success": True,
+                    "html": html_content,
+                    "items_practica": items_json,  # 👈 AÑADIDO
+                })
+            
+            return super().post(request, *args, **kwargs)
+
+        # inválidos…
+        if is_ajax(request):
+            errors = form.errors
+            if formset and formset.errors:
+                errors = {"form": form.errors, "formset": formset.non_form_errors()}
+                
+            return JsonResponse({"success": False, "errors": errors}, status=400)
+
+        return self.render_to_response(self.get_context_data(form=form, formset=formset))
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

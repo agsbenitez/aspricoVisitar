@@ -10,7 +10,13 @@
             </div>
 
             <div class="titulo-bono text-center" style="flex:0 0 50%;">
-        <h2 class="mb-1">BONO DE CONSULTA</h2>
+        {% if tipo == 'practica' %}
+                <h2 class="mb-1">BONO DE PRÁCTICA</h2>
+        {% else %}
+                <h2 class="mb-1">BONO DE PRÁCTICA</h2>
+        {% endif %}
+
+        
         <p class="mb-0 subtitulo">
         AGRUPACIÓN DE SANATORIOS PRIVADOS DE LA PROVINCIA DE CORRIENTES<br>
         RIVADAVIA 1398 – CORRIENTES (3400) – TEL: (03794)-431717 – MÓVIL 3794-574299<br>
@@ -23,10 +29,6 @@
                 
                 <p class="mb-0"><strong>Fecha:</strong> {{ consulta.fecha_emision|date:"d/m/Y" }}</p>
             </div>
-        
-
-    
-
         </div>
             <div class="d-flex justify-content-between mt-3">
                 <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
@@ -55,6 +57,7 @@
                     <p><strong>Nº Afiliado:</strong> {{ consulta.afiliado.numero }}</p>
                 </div>
             </div>
+            
             <div class="row">
                 <div class="col-12">
                     {% if consulta.prestador%}
@@ -65,9 +68,43 @@
                     {% endif %}
                 </div>
             </div>
+
         </div>
+        
+        <!-- Detalles según tipo -->
+        {% if tipo == 'practica' or consulta.tipo == 'practica' %}
+            {# Tabla de prácticas #}
+            <p><strong>Prácticas Solicitadas:</strong></p>
+            {% if not items_practica %}
+                <p class="text-muted"><em>No se han agregado prácticas.</em></p>
+            {% endif %}
+            {% if items_practica %}
+              <hr>
+              <h6 class="mb-2">Prácticas</h6>
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th style="width: 140px;">Código</th>
+                    <th>Descripción</th>
+                  </tr>
+                </thead>
+                <tbody id="bono-practicas-tbody">
+                    
+                  {% for it in items_practica %}
+                    <tr>
+                      <td>{{ it.practica.codPractica }}</td>
+                      <td>{{ it.practica.descripcion }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% endif %}
+        {% endif %}
+        
+
+        
         <br>
-        <br>    
+        <br>
         <div class="firmas">
             <div class="firma">
                 <p>_______________________</p>

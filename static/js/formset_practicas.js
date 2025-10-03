@@ -106,7 +106,7 @@
   
   // Buscar en backend
   async function buscarPracticas(q) {
-    const url = `/consultas/practicas-search/?q=${encodeURIComponent(q)}`;
+    const url = `${window.ENDPOINTS.buscarPracticas}?q=${encodeURIComponent(q)}`;
     const resp = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     return await resp.json(); // {results: [...]}
@@ -200,6 +200,58 @@
       estadoBusqueda.textContent = 'Error al buscar. Intenta de nuevo.';
     }
   }
+
+  function getIdsPracticasActuales() {
+    return Array.from(
+      document.querySelectorAll('input[type="hidden"][name$="-practica"]')
+    )
+    .map(i => i.value)
+    .filter(Boolean);
+  }
+
+  function esPracticaYaCargada(id) {
+    return getIdsPracticasActuales().includes(String(id));
+  }
+
+  document.getElementById('btn-agregar-seleccionadas')
+  .addEventListener('click', () => {
+    const checks = Array.from(document.querySelectorAll('.chk-prac:checked'));
+    if (!checks.length) { mostrarEstado('warning', 'No seleccionaste prácticas'); return; }
+
+    const actuales = getIdsPracticasActuales();
+    const cupo = 10 - actuales.length;
+    if (cupo <= 0) { mostrarEstado('warning', 'Ya alcanzaste el máximo de 10'); return; }
+
+    // Construimos la lista, evitando duplicados
+    const nuevas = [];
+    for (const chk of checks) {
+      const id = chk.dataset.id;
+      if (actuales.includes(id)) continue; // ya está
+      nuevas.push({
+        id,
+        codPractica: chk.dataset.codigo,
+        descripcion: chk.dataset.nombre
+      });
+      if (nuevas.length === cupo) break; // respetar tope
+    }
+
+    if (!nuevas.length) {
+      mostrarEstado('info', 'No hay prácticas nuevas para agregar (algunas ya estaban)');
+      return;
+    }
+
+    // Agregar filas
+    nuevas.forEach(addRowWithPractice); // tu función existente
+
+    // Feedback si recortamos por cupo
+    if (checks.length > nuevas.length) {
+      const restantes = 10 - getIdsPracticasActuales().length;
+      mostrarEstado('warning', `Se alcanzó el máximo de 10. Agregadas ${nuevas.length}. Cupo restante: ${restantes}`);
+    }
+
+    // Cerrar modal si querés
+    // bootstrap.Modal.getInstance(document.getElementById('modalResultadosPractica'))?.hide();
+  });
   
 })();
 

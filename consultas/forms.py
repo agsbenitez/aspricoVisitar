@@ -1,39 +1,12 @@
 from django import forms
-from dal import autocomplete
-from django.forms import inlineformset_factory
+from django.core.exceptions import ValidationError
+from django.forms import inlineformset_factory, BaseInlineFormSet
 from .models import Consulta
 from afiliados.models import Afiliado
 from .models import Practica, PracticaConsulta
-from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
-
-"""Formulario para buscar una práctica específica
-Este formulario utiliza un campo de selección con autocompletado para buscar prácticas
-por código o nombre. El widget de autocompletado permite al usuario escribir y filtrar
-las prácticas disponibles, facilitando la selección de una práctica específica.
-
-class ItemPracticaForm(forms.ModelForm):
-    class Meta:
-        model = Practica
-        fields = ['practica']  # el FK a Practica
-        widgets = {
-            'practica': forms.Select(attrs={'class': 'form-select'})
-        }
-        labels = {
-            'practica': 'Práctica'
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # queryset completo (o filtrado si hace falta)
-        self.fields['practica'].queryset = Practica.objects.all().order_by('codPractica')
-        # cómo mostrar cada opción en el select
-        self.fields['practica'].label_from_instance = (
-            lambda obj: f"{obj.codPractica} - {obj.descripcion}"
-        )
-"""
 
 
 class PracticaConsultaForm(forms.ModelForm):
@@ -45,6 +18,32 @@ class PracticaConsultaForm(forms.ModelForm):
         }
         labels = {'practica': 'Práctica'}
 
+class BasePracticaConsultaFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        vistos = set()
+        count = 0
+
+        for form in self.forms:
+            if not hasattr(form, 'cleaned_data'):
+                continue
+
+            if form.cleaned_data.get('DELETE'):
+                continue
+
+            practica = form.cleaned_data.get('practica')
+            if not practica:
+                # Podés decidir si exigir práctica en todas las filas no borradas:
+                # raise ValidationError("Hay filas sin práctica seleccionada.")
+                raise ValidationError("El Bono debe incluir al menos una practica.")
+
+            count += 1
+            if practica.pk in vistos:
+                raise ValidationError("Hay prácticas repetidas en el bono.")
+            vistos.add(practica.pk)
+
+        if count > 10:
+            raise ValidationError("No puede cargar más de 10 prácticas por bono.")
 
 ItemPracticaFormSet = inlineformset_factory(
     Consulta,
@@ -71,18 +70,7 @@ class ConsultaForm(forms.ModelForm):
         widget=forms.HiddenInput(),
         required=True
     )
-    # Campo oculto para el tipo de bono
-    # Esto se puede usar para diferenciar entre tipos de consultas o bonos
-    # Por ejemplo, si se desea agregar más tipos en el futuro
-    # Aquí se establece un valor por defecto de 'consulta'
-    # que puede ser modificado según las necesidades del sistema
-    """tipo = forms.CharField(
-        widget=forms.HiddenInput(),
-        initial='consulta',
-        required=True,
-        label='Tipo de Bono'
-    )
-"""
+    
     class Meta:
         model = Consulta
         fields = ['prestador','diagnostico', 'afiliado_id']

@@ -12,7 +12,7 @@
     </div>
   </div>
 {% endfor %}
-<form method="post">
+
   {% csrf_token %}
   {{ form.media }}            {# por si tu form principal aporta assets #}
   {{ formset.media }}         {# no usa DAL, pero por si hay otros widgets #}
@@ -68,7 +68,6 @@
       </div>
     </div>
   </template>
-</form>
 
 
 

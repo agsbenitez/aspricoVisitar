@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const imprimirBtn = document.getElementById('imprimirBtn');
     const bonoContainer = document.getElementById('bono-container');
-
+    console.log('[consultas.js] cargado');
     
 
 
@@ -218,7 +218,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     bonoContainer.innerHTML = data.html;
                     const nro = document.getElementById('nro-orden').textContent.trim()
                     imprimirBtn.disabled = false;
-                    console.log('habilitado boton imprimir  ', imprimirBtn.disabled);
                     mostrarEstado('success', 'Bono generado exitosamente');
                     submitBtn.disabled = true;
                     campoBusqueda.value = '';
@@ -230,6 +229,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('id_diagnostico').value = '';
                     }
                     afiliadoSeleccionado = null;
+                    if (data.items_practica?.length) {
+                        const tbody = document.querySelector('#bono-practicas-tbody'); // asegúrate que exista
+                            if (tbody) {
+                                tbody.innerHTML = data.items_practica.map(it => `
+                                  <tr>
+                                    <td>${it.codPractica}</td>
+                                    <td>${it.descripcion}</td>
+                                  </tr>
+                                `).join('');
+                          }
+                        }
+                    
                 } else {
                     throw new Error('No se encontró el contenedor del bono');
                 }
