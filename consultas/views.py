@@ -1,4 +1,3 @@
-from dal import autocomplete
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import CreateView, ListView
 from django.views.generic.edit import FormView
@@ -454,7 +453,7 @@ class NuevaConsultaView(LoginRequiredMixin, CreateView):
 """Vista para autocompletar prácticas
 Esta vista utiliza el paquete django-autocomplete-light para proporcionar
 un autocompletado de prácticas basado en el código o la descripción.
-El usuario puede buscar prácticas y seleccionar una de la lista desplegable."""
+El usuario puede buscar prácticas y seleccionar una de la lista desplegable.
 class PracticaAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Practica.objects.all()
@@ -464,7 +463,7 @@ class PracticaAutocomplete(autocomplete.Select2QuerySetView):
                 Q(codPractica__icontains=self.q) |
                 Q(descripcion__icontains=self.q)
             )
-        return qs
+        return qs"""
     
 def search_afiliados(request):
     """
