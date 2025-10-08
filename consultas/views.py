@@ -234,7 +234,7 @@ class NuevaPracticaView(BaseNuevaBonoView):
                 return JsonResponse({
                     "success": True,
                     "html": html_content,
-                    "items_practica": items_json,  # 👈 AÑADIDO
+                    "items_practica": items_json,
                 })
             
             return super().post(request, *args, **kwargs)
@@ -245,7 +245,7 @@ class NuevaPracticaView(BaseNuevaBonoView):
             if formset and formset.errors:
                 errors = {"form": form.errors, "formset": formset.non_form_errors()}
                 
-            return JsonResponse({"success": False, "errors": errors}, status=400)
+            return JsonResponse({"success": False, "errors": errors})
 
         return self.render_to_response(self.get_context_data(form=form, formset=formset))
 

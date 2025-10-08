@@ -201,57 +201,99 @@
     }
   }
 
-  function getIdsPracticasActuales() {
+  // Función mejorada: Obtiene IDs de prácticas actualmente activas (no borradas)
+function getIdsPracticasActuales() {
     return Array.from(
-      document.querySelectorAll('input[type="hidden"][name$="-practica"]')
+        // Selecciona todos los inputs ocultos de práctica
+        document.querySelectorAll('#items-practica .practica-item input[type="hidden"][name$="-practica"]')
     )
-    .map(i => i.value)
-    .filter(Boolean);
-  }
+    .filter(input => {
+        const row = input.closest('.practica-item');
+        // Encuentra el checkbox DELETE asociado a esta fila
+        const deleteCheckbox = row ? getDeleteCheckbox(row) : null;
+        
+        // Excluye si el checkbox DELETE existe y está marcado
+        if (deleteCheckbox && deleteCheckbox.checked) {
+            return false;
+        }
+
+        // Si la fila fue borrada visualmente (clase d-none), también la excluimos
+        if (row && row.classList.contains('d-none')) {
+             // Esta exclusión es más una capa defensiva, el chequeo del checkbox es lo principal
+             return false;
+        }
+
+        // Incluye si tiene un valor
+        return !!input.value;
+    })
+    .map(input => input.value);
+}
 
   function esPracticaYaCargada(id) {
     return getIdsPracticasActuales().includes(String(id));
   }
 
-  document.getElementById('btn-agregar-seleccionadas')
-  .addEventListener('click', () => {
+  document.getElementById('btn-agregar-seleccionadas').addEventListener('click', () => {
     const checks = Array.from(document.querySelectorAll('.chk-prac:checked'));
-    if (!checks.length) { mostrarEstado('warning', 'No seleccionaste prácticas'); return; }
+    if (!checks.length) { 
+        estadoBusqueda.textContent = 'No seleccionaste prácticas'; 
+        return; 
+    }
 
-    const actuales = getIdsPracticasActuales();
-    const cupo = 10 - actuales.length;
-    if (cupo <= 0) { mostrarEstado('warning', 'Ya alcanzaste el máximo de 10'); return; }
+    const actuales = getIdsPracticasActuales(); // Usa la función mejorada (que revisamos antes)
+    const MAX_PRACTICES = 10;
+    const cupo = MAX_PRACTICES - actuales.length;
+
+    if (cupo <= 0) { 
+        estadoBusqueda.textContent = `Ya alcanzaste el máximo de ${MAX_PRACTICES} prácticas.`; 
+        return; 
+    }
 
     // Construimos la lista, evitando duplicados
     const nuevas = [];
     for (const chk of checks) {
-      const id = chk.dataset.id;
-      if (actuales.includes(id)) continue; // ya está
-      nuevas.push({
-        id,
-        codPractica: chk.dataset.codigo,
-        descripcion: chk.dataset.nombre
-      });
-      if (nuevas.length === cupo) break; // respetar tope
+        const id = chk.dataset.id;
+        
+        // ¡Validación de duplicados corregida!
+        if (actuales.includes(id)) continue; 
+
+        // Chequeo de que los atributos de datos existan para evitar errores
+        const codPractica = chk.dataset.codpractica; 
+        const descripcion = chk.dataset.descripcion;
+
+        if (!codPractica || !descripcion) {
+            console.error('Error: Faltan datos en el checkbox de práctica', chk);
+            continue;
+        }
+
+        nuevas.push({
+            id,
+            codPractica: codPractica,
+            descripcion: descripcion
+        });
+        
+        if (nuevas.length >= cupo) break; // Usamos >= para ser defensivos y respetar el tope
     }
 
     if (!nuevas.length) {
-      mostrarEstado('info', 'No hay prácticas nuevas para agregar (algunas ya estaban)');
-      return;
+        estadoBusqueda.textContent = 'No hay prácticas nuevas para agregar (ya estaban cargadas o excediste el cupo).';
+        return;
     }
 
     // Agregar filas
-    nuevas.forEach(addRowWithPractice); // tu función existente
+    nuevas.forEach(addRowWithPractice); 
 
     // Feedback si recortamos por cupo
     if (checks.length > nuevas.length) {
-      const restantes = 10 - getIdsPracticasActuales().length;
-      mostrarEstado('warning', `Se alcanzó el máximo de 10. Agregadas ${nuevas.length}. Cupo restante: ${restantes}`);
+        const restantes = MAX_PRACTICES - getIdsPracticasActuales().length;
+        estadoBusqueda.textContent = `Se alcanzó el máximo de ${MAX_PRACTICES}. Agregadas ${nuevas.length}. Cupo restante: ${restantes}.`;
+    } else {
+        estadoBusqueda.textContent = `Prácticas agregadas con éxito.`;
     }
-
-    // Cerrar modal si querés
-    // bootstrap.Modal.getInstance(document.getElementById('modalResultadosPractica'))?.hide();
-  });
+    
+    // Cerramos el modal
+    bootstrap.Modal.getInstance(document.getElementById('modalResultadosPractica'))?.hide();
+});
   
 })();
 
