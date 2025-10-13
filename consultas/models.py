@@ -121,6 +121,20 @@ class Consulta(models.Model):
             self.codigo_seguridad = signer.sign_object(payload)
         super().save(*args, **kwargs)
 
+class CategoriaPractica(models.Model):
+    nombre = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text='Nombre de la categoría de práctica'
+    )
+    
+    class Meta:
+        verbose_name = 'Categoría de Práctica'
+        verbose_name_plural = 'Categorías de Prácticas'
+        
+    def __str__(self):
+        return self.nombre
+    
 class Practica(models.Model):
     codPractica = models.CharField(
         max_length=9,
@@ -131,6 +145,22 @@ class Practica(models.Model):
     descripcion = models.CharField(
         max_length=255,
         help_text='Descripción de la práctica asociada'
+    )
+    precio = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,  # <-- Valor por defecto que se usará en futuras creaciones
+        null=True,     # <-- Necesario para permitir la migración en dos pasos
+        blank=True,
+        help_text='Precio de la práctica'
+    )
+    categoria = models.ForeignKey(
+        CategoriaPractica,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='practicas',
+        help_text='Categoría a la que pertenece la práctica'
     )
     class Meta:
         verbose_name = 'Codigo de Práctica'
