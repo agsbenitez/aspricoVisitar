@@ -19,7 +19,12 @@ urlpatterns = [
     # AJAX
     path("ajax/afiliados/", search_afiliados,  name="ajax_buscar_afiliados"),
     path("ajax/practicas/", search_practicas, name="ajax_buscar_practicas"),
-    path('', ListaBonosView.as_view(), name='lista_bonos'),
+    path('', ListaBonosView.as_view(),
+         {'tipo_bono': 'consulta'},
+          name='lista_bonos'),
+    path('lista-practicas/', ListaBonosView.as_view(),
+         {'tipo_bono': 'practica'},
+          name='lista_practicas'),
     
     #impresion bono
     path('imprimir-bono/', imprimir_bono, name='imprimir_bono'),

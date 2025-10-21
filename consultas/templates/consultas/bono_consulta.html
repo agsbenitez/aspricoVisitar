@@ -13,7 +13,7 @@
         {% if tipo == 'practica' %}
                 <h2 class="mb-1">BONO DE PRÁCTICA</h2>
         {% else %}
-                <h2 class="mb-1">BONO DE PRÁCTICA</h2>
+                <h2 class="mb-1">BONO DE CONSULTA</h2>
         {% endif %}
 
         
@@ -31,9 +31,14 @@
             </div>
         </div>
             <div class="d-flex justify-content-between mt-3">
-                <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
-                    monto coseguro: ${{ consulta.afiliado.obra_social.monto_coseguro|floatformat:2 }} (a cargo del afiliado)
-                </p>
+                {% if tipo != 'practica' %}
+                    <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
+                        monto coseguro: ${{ consulta.afiliado.obra_social.monto_coseguro|floatformat:2 }} (a cargo del afiliado)
+                    </p>
+                {% else %}
+                    <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
+                    <p>
+                {% endif %}
                 <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
                     (vigencia 30 días desde la fecha de emisión)
                 </p>

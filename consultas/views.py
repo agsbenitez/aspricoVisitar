@@ -34,7 +34,9 @@ class ListaBonosView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = Consulta.objects.all().order_by('-fecha_emision')
+        tipo_filtro = self.kwargs.get('tipo_bono', 'consulta')
+
+        queryset = Consulta.objects.filter(tipo=tipo_filtro).order_by('-fecha_emision')
         q = self.request.GET.get('q')
         if q:
             queryset = queryset.filter(
@@ -470,7 +472,6 @@ def search_afiliados(request):
     GET /consultas/ajax/afiliados/?q=texto
     Devuelve lista simple para autocompletar/buscar afiliados.
     """
-    print("Atiende la buscqueda de afiliados via ajax")
     if request.method != "GET":
         return HttpResponseBadRequest("Método no permitido")
 

@@ -8,6 +8,7 @@ from django.core import signing
 from django.conf import settings
 
 
+
 class Consulta(models.Model):
 
     TIPO_CONSULTA  = 'consulta'
@@ -120,6 +121,26 @@ class Consulta(models.Model):
             )
             self.codigo_seguridad = signer.sign_object(payload)
         super().save(*args, **kwargs)
+
+    @property
+    def valor_total_practicas(self):
+        """Calcula y devuelve el valor total de todas las prácticas asociadas al bono."""
+        
+        # 1. Filtra solo los bonos de tipo 'practica' para evitar errores
+        if self.tipo != self.TIPO_PRACTICA:
+            return None  # O 0.00, según tu preferencia
+        
+        # 2. Utiliza la función de agregación SUM de Django ORM
+        from django.db.models import Sum
+        
+        # Accede a las prácticas asociadas (related_name='practicas_consulta')
+        # y suma los precios a través de la relación (practicas_consulta__practica__precio)
+        total = self.practicas_consulta.aggregate(
+            total=Sum('practica__precio')
+        )['total']
+
+        # 3. Devuelve el total (o 0.00 si no hay prácticas)
+        return total if total is not None else 0.00
 
 class CategoriaPractica(models.Model):
     nombre = models.CharField(
