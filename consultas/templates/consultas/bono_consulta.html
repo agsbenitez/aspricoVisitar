@@ -10,7 +10,7 @@
             </div>
 
             <div class="titulo-bono text-center" style="flex:0 0 50%;">
-        {% if tipo == 'practica' %}
+        {% if tipo == 'practica' or consulta.tipo == 'practica'%}
                 <h2 class="mb-1">BONO DE PRÁCTICA</h2>
         {% else %}
                 <h2 class="mb-1">BONO DE CONSULTA</h2>
@@ -31,7 +31,7 @@
             </div>
         </div>
             <div class="d-flex justify-content-between mt-3">
-                {% if tipo != 'practica' %}
+                {% if tipo == 'consulta' or consulta.tipo == 'consulta'%}
                     <p class="small text-muted mb-1" style="white-space: nowrap; break-word;">
                         monto coseguro: ${{ consulta.afiliado.obra_social.monto_coseguro|floatformat:2 }} (a cargo del afiliado)
                     </p>

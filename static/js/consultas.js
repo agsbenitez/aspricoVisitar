@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const imprimirBtn = document.getElementById('imprimirBtn');
     const bonoContainer = document.getElementById('bono-container');
-    console.log('[consultas.js] cargado');
+    
     
 
 
