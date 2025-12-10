@@ -204,6 +204,10 @@ class PracticaConsulta(models.Model):
         related_name='practicas',
         help_text='Práctica asociada a la consulta'
     )
+    cantidad = models.PositiveIntegerField(
+        default=1,
+        help_text='Cantidad de veces que se realiza la práctica'
+    )
     timeStamp = models.DateTimeField(
         auto_now_add=True,
         help_text='Fecha y hora de creación del registro'

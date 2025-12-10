@@ -1,21 +1,12 @@
-window.ENDPOINTS = {
-    buscarAfiliados: "{% url 'consultas:ajax_buscar_afiliados' %}",
-    buscarPracticas: "{% url 'consultas:ajax_buscar_practicas' %}",
-  };
+
+/*
+Funcion para imprimi los bonos generados, es llamada desde al boton de imprimir
+en la plantilla de bono_consulta.html
+*/
 
 
-function imprimirBono() {
-    const bonoContainer = document.getElementById('bono-container');
-    if (!bonoContainer || !bonoContainer.innerHTML.trim()) {
-        alert('Primero debe generar un bono para poder imprimirlo.');
-        return;
-    }
-    
-    const ventanaImpresion = window.open('/consultas/imprimir-bono/', '_blank');
-    ventanaImpresion.onload = function() {
-        ventanaImpresion.print();
-    };
-}
+
+
 
 document.addEventListener('DOMContentLoaded', function() {
     let afiliadoSeleccionado = null;
@@ -30,18 +21,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalNoEncontrado = new bootstrap.Modal(document.getElementById('modalNoEncontrado'));
     const modalConfirmarAfiliado = new bootstrap.Modal(document.getElementById('modalConfirmarAfiliado'));
 
+    const imprimirBtn = document.getElementById('imprimirBtn');
+    const bonoContainer = document.getElementById('bono-container');
+    
+    
 
-    campoBusqueda.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();              // evita el submit del form
-        realizarBusquedaAfiliado();      // dispara la búsqueda AJAX
-      }
-    });
+
+    // Instalar el handler UNA sola vez (por si generás varios bonos sin recargar)
+    if (imprimirBtn && !imprimirBtn.dataset.bound) {
+      imprimirBtn.addEventListener('click', () => {
+        // Leer el nro desde el HTML recién inyectado
+        const span = document.querySelector('#bono-container #nro-orden');
+        const nro = span ? span.textContent.trim() : '';
+
+        if (!nro) {
+          alert('Primero generá el bono para poder imprimir.');
+          return;
+        }
+        // Usá tu función global que ya funciona con nroOrden
+        window.imprimirBono(nro);
+      });
+      // Marcamos que ya ligamos el handler para no duplicarlo
+      imprimirBtn.dataset.bound = 'true';
+    }
 
 
     async function realizarBusqueda(e) {
         e?.preventDefault?.();
-            
+
         const searchTerm = campoBusqueda.value.trim();
         if (searchTerm.length < 3) {
           mostrarEstado('warning', 'Ingrese al menos 3 caracteres para buscar');
@@ -72,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
           console.error(err);
           mostrarEstado('danger', 'Error al realizar la búsqueda');
         }
-}
+    }
 
     function mostrarEstado(tipo, mensaje) {
         estadoBusqueda.innerHTML = `<div class="alert alert-${tipo} mb-0 py-1">${mensaje}</div>`;
@@ -90,7 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <th>DNI</th>
                 <th>CUIL</th>
                 <th>Obra Social</th>
-                <th>Monto Coseguro___</th>
                 <th>Acciones</th>
             </tr>
         `;
@@ -104,7 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${afiliado.nrodoc}</td>
                 <td>${afiliado.cuil}</td>
                 <td>${afiliado.obra_social}</td>
-                <td>${afiliado.obra_social_monto_coseguro}</td>
                 <td>
                     <button class="btn btn-sm btn-primary btn-seleccionar" data-afiliado='${JSON.stringify(afiliado)}'>
                         Seleccionar
@@ -152,6 +157,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <th>Obra Social:</th>
                     <td>${afiliado.obra_social}</td>
                 </tr>
+                <tr>
+                    <th>Monto Coseguro:</th>
+                    <td>${afiliado.monto_coseguro}</td>
+                </tr>
             </table>
         `;
         afiliadoSeleccionado = afiliado;
@@ -164,10 +173,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    //funcion para enviar el formulario, submit
+    
+
     consultaForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        console.log('Enviando formulario de consulta');
+        console.log('Enviando formulario de consulta...');
         if (!afiliadoSeleccionado) {
             mostrarEstado('warning', 'Debe seleccionar un afiliado primero');
             return;
@@ -205,8 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (data.success && data.html) {
                 const bonoContainer = document.getElementById('bono-container');
+                
                 if (bonoContainer) {
                     bonoContainer.innerHTML = data.html;
+                    const nro = document.getElementById('nro-orden').textContent.trim()
+                    imprimirBtn.disabled = false;
                     mostrarEstado('success', 'Bono generado exitosamente');
                     submitBtn.disabled = true;
                     campoBusqueda.value = '';
@@ -218,6 +231,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById('id_diagnostico').value = '';
                     }
                     afiliadoSeleccionado = null;
+                    if (data.items_practica?.length) {
+                        const tbody = document.querySelector('#bono-practicas-tbody'); // asegúrate que exista
+                            if (tbody) {
+                                tbody.innerHTML = data.items_practica.map(it => `
+                                  <tr>
+                                    <td>${it.codPractica}</td>
+                                    <td>${it.descripcion}</td>
+                                    <td>${it.cantidad}</td>
+                                  </tr>
+                                `).join('');
+                          }
+                        }
+                    
                 } else {
                     throw new Error('No se encontró el contenedor del bono');
                 }
@@ -241,7 +267,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     btnConfirmarAfiliado.addEventListener('click', function() {
         if (afiliadoSeleccionado) {
-            console.log('Afiliado seleccionado:', afiliadoSeleccionado.nrodoc);
             document.getElementById('afiliado_id').value = afiliadoSeleccionado.nrodoc;
             submitBtn.disabled = false;
             mostrarEstado('success', `Afiliado seleccionado: ${afiliadoSeleccionado.nombre}`);
@@ -253,7 +278,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalElement = document.getElementById(modalId);
         modalElement.addEventListener('hidden.bs.modal', function () {
             if (!afiliadoSeleccionado) {
-                console.log('Modal cerrado sin seleccionar afiliado');
                 campoBusqueda.value = '';
                 mostrarEstado('info', 'Ingrese apellido, DNI o CUIL del afiliado y presione Enter');
             }

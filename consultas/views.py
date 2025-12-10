@@ -218,6 +218,7 @@ class NuevaPracticaView(BaseNuevaBonoView):
                         "id": it.pk,
                         "codPractica": it.practica.codPractica,
                         "descripcion": it.practica.descripcion,
+                        "cantidad": it.cantidad,
                     }
                     for it in items
                 ]

@@ -10,13 +10,39 @@ logger = logging.getLogger(__name__)
 
 
 class PracticaConsultaForm(forms.ModelForm):
+
+    def clean_cantidad(self):
+        # 1. Obtener el valor de cantidad ingresado
+        cantidad = self.cleaned_data.get('cantidad')
+        
+        # 2. Aplicar la regla de negocio: Máximo permitido (EJEMPLO: 10)
+        MAX_CANTIDAD = 5 
+        
+        if cantidad is None:
+             # Debería ser atrapado por PositiveIntegerField, pero defensivo
+             raise ValidationError("La cantidad es requerida.")
+        
+        if cantidad > MAX_CANTIDAD:
+            raise ValidationError(f"La cantidad máxima autorizada es {MAX_CANTIDAD}.")
+            
+        # 3. Retornar el valor limpio
+        return cantidad
+    
     class Meta:
         model = PracticaConsulta
         fields = ['practica']
         widgets = {
-            'practica': forms.HiddenInput()
+            'practica': forms.HiddenInput(),
+            'cantidad': forms.NumberInput(attrs={
+                'min': 1,
+                'max': 5,
+                'step': 1
+                }),
         }
-        labels = {'practica': 'Práctica'}
+        labels = {
+            'practica': 'Práctica',
+            'cantidad': 'Cantidad',
+        }
 
 class BasePracticaConsultaFormSet(BaseInlineFormSet):
     def clean(self):
@@ -49,6 +75,7 @@ ItemPracticaFormSet = inlineformset_factory(
     Consulta,
     PracticaConsulta,
     form=PracticaConsultaForm,
+    fields=('practica', 'cantidad'),
     extra=0,               # arrancamos vacío, lo llenará JS
     can_delete=True
 )

@@ -163,3 +163,16 @@
 .usuario-emision p {
     margin: 0;
 } 
+
+/* Clase para la columna de código */
+.columna-codigo {
+    /* Define el ancho fijo para la columna de código */
+    width: 140px; 
+}
+
+.columna-cantidad {
+    /* Define el ancho fijo para la columna de cantidad */
+    width: 180px; 
+    /* La alineación central es una propiedad de presentación, la definimos aquí */
+    text-align: center; 
+}

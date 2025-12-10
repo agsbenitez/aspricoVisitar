@@ -173,6 +173,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    
+
     consultaForm.addEventListener('submit', function(e) {
         e.preventDefault();
         console.log('Enviando formulario de consulta...');
@@ -236,6 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                   <tr>
                                     <td>${it.codPractica}</td>
                                     <td>${it.descripcion}</td>
+                                    <td>${it.cantidad}</td>
                                   </tr>
                                 `).join('');
                           }
