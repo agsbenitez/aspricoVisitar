@@ -1,0 +1,8 @@
+/* static/css/practicas.css */
+
+/* Oculta la primera fila de un formset, que generalmente es el slot vacío de min_num=1 */
+
+
+#items-practica > .practica-item:not(.d-none) {
+    display: block !important; 
+}

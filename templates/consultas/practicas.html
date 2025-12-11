@@ -49,31 +49,35 @@
   <!-- Template oculto para clonar filas -->
   <template id="empty-form">
     <div class="row practica-item g-2 align-items-center mb-2">
-      <div class="col-6">
-        {{ formset.empty_form.practica }}
-        <input type="text" class="form-control practica-display" readonly placeholder="Práctica seleccionada">
+      <div id="items_practica">
+        <div class="row practica-item g-2 align-items-center mb-2">
+          <div class="col-6">
+            {{ formset.empty_form.practica }}
+            <input type="text" class="form-control practica-display" readonly placeholder="Práctica seleccionada">
+          </div>
+          <div class="col-2">
+            <input type="number" 
+                   class="form-control practica-cantidad" 
+                   name="items_practica-__prefix__-cantidad" 
+                   id="id_items_practica-__prefix__-cantidad" 
+                   min="1" 
+                   value="1"> 
+          </div>
+          <div class="col-2">
+            <input type="checkbox"
+                 class="form-check-input"
+                 name="items_practica-__prefix__-DELETE"
+                 id="id_items_practica-__prefix__-DELETE">
+
+            <label class="form-check-label" for="id_items_practica-__prefix__-DELETE">Eliminar</label>
+            <!-- Botón UX para marcar borrado sin tocar TOTAL_FORMS -->
+            <button type="button" class="btn btn-link text-danger p-0 btn-quitar">Quitar</button>
+            <!-- (opcional) Botón para revertir -->
+            <button type="button" class="btn btn-link p-0 btn-restaurar d-none">Deshacer</button>
+          </div>
+        </div>
       </div>
-      <div class="col-2">
-        <input type="number" 
-               class="form-control practica-cantidad" 
-               name="items_practica-__prefix__-cantidad" 
-               id="id_items_practica-__prefix__-cantidad" 
-               min="1" 
-               value="1"> 
-      </div>
-      <div class="col-2">
-        <input type="checkbox"
-               class="form-check-input"
-               name="items_practica-__prefix__-DELETE"
-               id="id_items_practica-__prefix__-DELETE">
-               
-        <label class="form-check-label" for="id_items_practica-__prefix__-DELETE">Eliminar</label>
-        <!-- Botón UX para marcar borrado sin tocar TOTAL_FORMS -->
-        <button type="button" class="btn btn-link text-danger p-0 btn-quitar">Quitar</button>
-        <!-- (opcional) Botón para revertir -->
-        <button type="button" class="btn btn-link p-0 btn-restaurar d-none">Deshacer</button>
-        
-      </div>
+      
     </div>
   </template>
 

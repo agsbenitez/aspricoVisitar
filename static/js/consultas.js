@@ -174,6 +174,47 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     
+    function extractErrors(errs, mensajes) {
+        for (const key in errs) {
+            if (!errs.hasOwnProperty(key)) continue;
+
+            const value = errs[key];
+
+            // --- Nivel 1: Array de formularios del formset (errors.formset) ---
+            if (key === 'formset' && Array.isArray(value)) {
+
+                value.forEach((form_errors_obj, index) => {
+                    // Navegar dentro de cada formulario individual (Fila #1, #2, etc.)
+                    if (Object.keys(form_errors_obj).length > 0) {
+                        mensajes.push(`(Fila #${index + 1} - Práctica)`);
+                        extractErrors(form_errors_obj, mensajes); // Recursión
+                    }
+                });
+            
+            // --- Nivel 2: Arrays de mensajes finales (errors.form.campo o errors.formset[i].campo) ---
+            } else if (Array.isArray(value) && value.every(item => typeof item === 'string')) {
+                // Si la clave es el nombre de un campo (practica, cantidad, __all__):
+
+                // Añadir el nombre del campo para el contexto, si no es un error general
+                if (key !== '__all__') {
+                    mensajes.push(`[${key}]:`);
+                }
+                // Agregar los strings de error
+                mensajes.push(...value); 
+
+            // --- Nivel 3: Objetos Anidados Restantes (errors.form) ---
+            } else if (typeof value === 'object' && value !== null) {
+
+                // Etiquetar el formulario principal si no es vacío y no es formset
+                if (key === 'form' && Object.keys(value).length > 0) {
+                     mensajes.push('(Formulario Principal)');
+                }
+
+                // Recursión para seguir navegando
+                extractErrors(value, mensajes);
+            }
+        }
+    }
 
     consultaForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -248,16 +289,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error('No se encontró el contenedor del bono');
                 }
             } else if (data.errors) {
-                let mensajeError = 'Error al generar el bono';
-                if (typeof data.errors === 'string') {
-                    mensajeError += ': ' + data.errors;
-                } else if (typeof data.errors === 'object') {
-                    const errores = Object.values(data.errors).flat();
-                    mensajeError += ': ' + errores.join(', ');
+                let mensajeError = 'Error al generar el bono: ';
+                const mensajes = []; // Array local
+                        
+                // 🚨 Llamada ÚNICA y CORRECTA al parser
+                // Le pasamos el objeto de errores completo.
+                extractErrors(data.errors, mensajes); 
+                        
+                // --- Lógica de filtrado y display ---
+                const erroresLimpios = mensajes.filter(msg => typeof msg === 'string' && msg.trim() !== '');
+                        
+                if (erroresLimpios.length > 0) {
+                    mensajeError += erroresLimpios.join('; '); 
+                } else {
+                    // Fallback si la estructura no fue navegada (aunque ahora sí debería)
+                    mensajeError += 'Verifique los errores de validación.';
+                    console.error('Error no parseado completamente:', data.errors);
                 }
+                
                 mostrarEstado('danger', mensajeError);
-            } else {
-                mostrarEstado('danger', 'Error: Respuesta del servidor no válida');
+
             }
         })
         .catch(error => {

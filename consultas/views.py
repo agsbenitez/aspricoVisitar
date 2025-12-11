@@ -238,8 +238,17 @@ class NuevaPracticaView(BaseNuevaBonoView):
                     "html": html_content,
                     "items_practica": items_json,
                 })
+        else:
+               return JsonResponse({
+                   'success': False,
+                   'errors': {
+                   'form': form.errors, # Esto es correcto
+                   'formset': formset.errors # ⚠️ Esto es problemático para formsets
+               }
+                }, status=400   )
             
-            return super().post(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
+        
 
         # inválidos…
         if is_ajax(request):

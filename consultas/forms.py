@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory, BaseInlineFormSet
+
 from .models import Consulta
 from afiliados.models import Afiliado
 from .models import Practica, PracticaConsulta
@@ -10,6 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class PracticaConsultaForm(forms.ModelForm):
+    
+    practica = forms.ModelChoiceField(
+        queryset=Practica.objects.all(),
+        required=True,
+        widget=forms.HiddenInput()
+    )
 
     def clean_cantidad(self):
         # 1. Obtener el valor de cantidad ingresado
@@ -77,7 +84,8 @@ ItemPracticaFormSet = inlineformset_factory(
     form=PracticaConsultaForm,
     fields=('practica', 'cantidad'),
     extra=0,               # arrancamos vacío, lo llenará JS
-    can_delete=True
+    can_delete=True,
+    min_num=1,
 )
 
 class ConsultaForm(forms.ModelForm):
