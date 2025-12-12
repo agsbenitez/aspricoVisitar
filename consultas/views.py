@@ -242,8 +242,9 @@ class NuevaPracticaView(BaseNuevaBonoView):
                return JsonResponse({
                    'success': False,
                    'errors': {
-                   'form': form.errors, # Esto es correcto
-                   'formset': formset.errors # ⚠️ Esto es problemático para formsets
+                   'form': form.errors, 
+                   'formset': formset.errors,
+                   'formset_global': formset.non_form_errors()
                }
                 }, status=400   )
             
@@ -251,6 +252,7 @@ class NuevaPracticaView(BaseNuevaBonoView):
         
 
         # inválidos…
+        '''
         if is_ajax(request):
             errors = form.errors
             if formset and formset.errors:
@@ -259,6 +261,7 @@ class NuevaPracticaView(BaseNuevaBonoView):
             return JsonResponse({"success": False, "errors": errors})
 
         return self.render_to_response(self.get_context_data(form=form, formset=formset))
+        '''
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

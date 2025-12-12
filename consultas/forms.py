@@ -52,11 +52,14 @@ class PracticaConsultaForm(forms.ModelForm):
         }
 
 class BasePracticaConsultaFormSet(BaseInlineFormSet):
+    logger.info('por acá pasa el formset clean()')
+    
     def clean(self):
+        logger.info('en el formset clean()')
         super().clean()
         vistos = set()
         count = 0
-
+        print(self.forms)
         for form in self.forms:
             if not hasattr(form, 'cleaned_data'):
                 continue
@@ -65,16 +68,24 @@ class BasePracticaConsultaFormSet(BaseInlineFormSet):
                 continue
 
             practica = form.cleaned_data.get('practica')
+            
+            
             if not practica:
                 # Podés decidir si exigir práctica en todas las filas no borradas:
                 # raise ValidationError("Hay filas sin práctica seleccionada.")
+                print("El Bono debe incluir al menos una practica.")
                 raise ValidationError("El Bono debe incluir al menos una practica.")
 
             count += 1
             if practica.pk in vistos:
                 raise ValidationError("Hay prácticas repetidas en el bono.")
+           
             vistos.add(practica.pk)
-
+        
+        if count == 0:
+            # Este mensaje aparecerá como error global del formset
+            raise ValidationError("El Bono debe incluir al menos una práctica.")
+        
         if count > 10:
             raise ValidationError("No puede cargar más de 10 prácticas por bono.")
 
@@ -85,7 +96,9 @@ ItemPracticaFormSet = inlineformset_factory(
     fields=('practica', 'cantidad'),
     extra=0,               # arrancamos vacío, lo llenará JS
     can_delete=True,
-    min_num=1,
+    min_num=0,
+
+    formset=BasePracticaConsultaFormSet,
 )
 
 class ConsultaForm(forms.ModelForm):
@@ -126,10 +139,9 @@ class ConsultaForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['prestador'].label = 'Prestador'    
         self.fields['diagnostico'].label = 'Diagnóstico'
-        logger.info('Inicializando ConsultaForm')
+        
 
     def clean(self):
-        logger.info('Iniciando limpieza de datos en ConsultaForm')
         cleaned_data = super().clean()
         
         try:
@@ -141,20 +153,20 @@ class ConsultaForm(forms.ModelForm):
                 raise forms.ValidationError('Debe seleccionar un afiliado válido')
             
             afiliado = Afiliado.objects.get(nrodoc=afiliado_id)  # Cambiamos a buscar por CUIL
-            logger.info(f'Afiliado encontrado: {afiliado.nombre}')
+            
             
             # Asignar datos del afiliado
             self.instance.afiliado = afiliado
             self.instance.obra_social = afiliado.obra_social
             # self.instance.prestador = 'RED ASPRICO ACE'
             
-            logger.info('Datos del formulario procesados correctamente')
+            
             
         except Afiliado.DoesNotExist:
-            logger.error(f'No se encontró el afiliado con CUIL: {afiliado_id}')
+            
             raise forms.ValidationError('El afiliado seleccionado no existe')
         except Exception as e:
-            logger.error(f'Error procesando el formulario: {str(e)}')
+            
             raise forms.ValidationError('Error procesando los datos del formulario')
         
         return cleaned_data 
