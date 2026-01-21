@@ -30,6 +30,7 @@ urlpatterns = [
     path('login/', include('autenticacion.urls', namespace='autenticacion')),
     path('afiliados/', include('afiliados.urls', namespace='afiliados')),
     path('consultas/', include('consultas.urls', namespace='consultas')),
+    path('estadisticas/', include('estadisticas.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

@@ -167,6 +167,6 @@ class ConsultaForm(forms.ModelForm):
             raise forms.ValidationError('El afiliado seleccionado no existe')
         except Exception as e:
             
-            raise forms.ValidationError('Error procesando los datos del formulario')
+                raise forms.ValidationError('Error procesando los datos del formulario')
         
         return cleaned_data 

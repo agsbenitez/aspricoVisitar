@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'afiliados',
     'consultas',
     'autenticacion',
+    'estadisticas',
     
 ]
 
