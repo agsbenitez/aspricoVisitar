@@ -3,8 +3,8 @@
 
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container mt-4"> 
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Dashboard de Estadísticas</h2>
         <div class="text-muted">
             Mostrando datos desde <strong>{{ fecha_inicio|date:"d/m/Y" }}</strong> hasta <strong>{{ fecha_fin|date:"d/m/Y" }}</strong>
@@ -16,34 +16,152 @@
             <form method="POST" class="row g-3 align-items-end">
                 {% csrf_token %}
                 <div class="col-md-4">
-                    <label class="form-label">Fecha Desde</label>
+                    <label class="form-label font-weight-bold">Fecha Desde</label>
                     {{ form.fecha_inicio }}
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Fecha Hasta</label>
+                    <label class="form-label font-weight-bold">Fecha Hasta</label>
                     {{ form.fecha_fin }}
                 </div>
                 <div class="col-md-4">
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
                         <i class="fas fa-filter"></i> Filtrar Estadísticas
                     </button>
+                    <a href="{% url 'estadisticas:exportar_csv' %}?inicio={{ fecha_inicio|date:'Y-m-d' }}&fin={{ fecha_fin|date:'Y-m-d' }}" 
+                   class="btn btn-success" title="Descargar reporte en CSV">
+                    <i class="fas fa-file-csv"></i> Exportar
+                </a>
                 </div>
-                {% if form.errors %}
-                <div class="col-12">
-                    <div class="text-danger small">{{ form.non_field_errors }}</div>
-                </div>
-                {% endif %}
+                
             </form>
         </div>
     </div>
 
-    
-</div>
-<div style="height: 300px;">
-    <canvas id="chartPracticas"></canvas> </div>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total de Bonos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ cant_total }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<div style="height: 300px;">
-    <canvas id="chartUsuarios"></canvas> </div>
+        <div class="col-md-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Consultas Médicas</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ cant_consultas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total de Prácticas</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ cant_practicas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-microscope fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Ranking de Prácticas</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 400px;">
+                        <canvas id="chartPracticas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Bonos por Usuario</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 400px;">
+                        <canvas id="chartUsuarios"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Detalle del Top 10 de Prácticas</h6>
+                <span class="badge badge-info">Rango seleccionado</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 15%;">Código</th>
+                                <th style="width: 70%;">Descripción de la Práctica</th>
+                                <th style="width: 15%;" class="text-center">Frecuencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in ranking_practicas_tabla %}
+                            <tr>
+                                <td class="font-weight-bold text-monospace">{{ item.practica__codPractica }}</td>
+                                <td>{{ item.practica__descripcion }}</td>
+                                <td class="text-center">
+                                    <span class="badge badge-pill text-white shadow-sm px-3 py-2" 
+                                          style="background-color: #43a047; font-size: 1rem; min-width: 50px;">
+                                        {{ item.total }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">
+                                    No hay datos disponibles para el rango seleccionado.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+
+
 
 {% endblock %}
 

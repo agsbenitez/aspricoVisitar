@@ -6,4 +6,5 @@ app_name = 'estadisticas' # 🚨 Importante para usar {% url 'estadisticas:dashb
 
 urlpatterns = [
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    path('dashboard/exportar/', views.exportar_consultas_csv, name='exportar_csv'),
 ]

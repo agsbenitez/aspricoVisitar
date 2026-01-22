@@ -69,20 +69,23 @@
                         </ul>
                     </li>
                     <!-- Esadísticas dropdown-->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="consultasDropdown" role="button"
-                           data-bs-toggle="dropdown" aria-expanded="false">
-                            Estadísticas
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="consultasDropdown">
-                            <li>
-                                <a class="dropdown-item" href="{% url 'estadisticas:dashboard' %}">
-                                    <i class="fas fa-file-medical"></i> Estadísticas
-                                </a>
-                            </li>                            
-                        </ul>
-                    </li>
                     
+                    {% if user.is_staff %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="consultasDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                Estadísticas
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="consultasDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'estadisticas:dashboard' %}">
+                                        <i class="fas fa-file-medical"></i> Estadísticas
+                                    </a>
+                                </li>                            
+                            </ul>
+                        </li>
+                    {% endif %}
+
                 {% endif %}
             </ul>
             <ul class="navbar-nav">
