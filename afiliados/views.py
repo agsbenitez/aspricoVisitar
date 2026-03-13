@@ -90,7 +90,11 @@ class ImportarAfiliadosView(LoginRequiredMixin, FormView):
             obras_sociales_creadas = 0
             obras_sociales_dict = {}
 
+
+            # Crear o actualizar obras sociales antes de procesar afiliados para evitar consultas repetidas
             obras_sociales_df = df[['os_id', 'os_nombre']].drop_duplicates()
+            # Procesar cada obra social y almacenarla en un diccionario para acceso rápido
+            """
             for _, row in obras_sociales_df.iterrows():
                 os_id, os_nombre = str(row['os_id']).strip(), str(row['os_nombre']).strip()
                 obra_social, created = ObraSocial.objects.get_or_create(
@@ -98,13 +102,91 @@ class ImportarAfiliadosView(LoginRequiredMixin, FormView):
                     defaults={'os_nombre': os_nombre}
                 )
                 obras_sociales_dict[os_id] = obra_social
+                # Si la obra social ya existía pero el nombre es diferente, actualizarlo
+                if created:
+                    obras_sociales_creadas += 1"""
+            obras_sociales_df = df[['os_id', 'os_nombre']].drop_duplicates()
+            for _, row in obras_sociales_df.iterrows():
+                os_id, os_nombre = str(row['os_id']).strip(), str(row['os_nombre']).strip()
+                
+                # Buscamos si ya existe para saber su estado previo
+                obra_social = ObraSocial.objects.filter(os_id=os_id).first()
+
+                if obra_social:
+                    # Si estaba inactiva y ahora vuelve, actualizamos fecha_alta como "re-activación"
+                    if not obra_social.activa:
+                        obra_social.fecha_alta = fecha_actual 
+
+                    obra_social.os_nombre = os_nombre
+                    obra_social.activa = True
+                    obra_social.fecha_baja = None # Limpiamos la baja
+                    obra_social.save()
+                else:
+                    # Es una Obra Social totalmente nueva
+                    obra_social, created = ObraSocial.objects.create(
+                        os_id=os_id,
+                        os_nombre=os_nombre,
+                        activa=True,
+                        fecha_alta=fecha_actual
+                    )
+                
+                obras_sociales_dict[os_id] = obra_social
+                
                 if created:
                     obras_sociales_creadas += 1
 
+
+
+            # Procesar cada fila del DataFrame para crear o actualizar afiliados
             for index, row in df.iterrows():
                 total += 1
+                """try:
+                    with transaction.atomic():
+                        nrodoc = str(row['nrodoc']).strip()
+                        os_id = str(row['os_id']).strip()
+                        obra_social = obras_sociales_dict[os_id]
+
+                        afiliado = Afiliado.objects.filter(nrodoc=nrodoc).first()
+                        datos_afiliado = {
+                            campo: ('' if pd.isna(row[campo]) else str(row[campo]).strip())
+                            for campo in columnas_requeridas
+                            if campo not in ['os_id', 'os_nombre']
+                        }
+
+                        # Procesar cuil: dejar como None si no es válido
+                        cuil_valido = datos_afiliado.get('cuil', '').strip()
+                        if cuil_valido in ('', '0', '0.0'):
+                            datos_afiliado['cuil'] = None
+
+                        if afiliado:
+                            afiliados_vistos.add(afiliado.nrodoc)
+                            if afiliado.obra_social != obra_social:
+                                AfiliadoHistorialObraSocial.objects.create(
+                                    afiliado=afiliado,
+                                    obra_social_anterior=afiliado.obra_social,
+                                    obra_social_nueva=obra_social
+                                )
+                                cambios_os += 1
+                                afiliado.obra_social = obra_social
+
+                            for campo, valor in datos_afiliado.items():
+                                setattr(afiliado, campo, valor)
+                            afiliado.baja = False
+                            afiliado.fecha_importacion = fecha_actual
+                            afiliado.save()
+                            actualizados += 1
+                        else:
+                            nuevo = Afiliado.objects.create(
+                                obra_social=obra_social,
+                                baja=False,
+                                fecha_importacion=fecha_actual,
+                                **datos_afiliado
+                            )
+                            afiliados_vistos.add(nuevo.nrodoc)
+                            creados += 1"""
                 try:
                     with transaction.atomic():
+
                         nrodoc = str(row['nrodoc']).strip()
                         os_id = str(row['os_id']).strip()
                         obra_social = obras_sociales_dict[os_id]
@@ -148,6 +230,32 @@ class ImportarAfiliadosView(LoginRequiredMixin, FormView):
                             afiliados_vistos.add(nuevo.nrodoc)
                             creados += 1
 
+                        # 1. Identificar Obras Sociales que NO vinieron en el archivo
+                        os_ids_presentes = [os.id for os in obras_sociales_dict.values()]
+                        os_a_inactivar = ObraSocial.objects.exclude(id__in=os_ids_presentes).filter(activa=True)
+                        
+                        cantidad_os_inactivadas = os_a_inactivar.count()
+                        
+                        # Marcar OS como inactivas y poner fecha de baja
+                        os_a_inactivar.update(activa=False, fecha_baja=fecha_actual)
+    
+                        # 2. Inactivar Afiliados que NO vinieron en el archivo
+                        Afiliado.objects.exclude(nrodoc__in=afiliados_vistos).update(
+                            baja=True, 
+                            fecha_baja=fecha_actual
+                        )
+                        
+                        # 3. SEGURIDAD EXTRA: Si una OS está inactiva, sus afiliados DEBEN estar de baja
+                        # (Esto cubre a los afiliados que quizás sí vinieron en el Excel pero su OS fue borrada manualmente o por error)
+                        Afiliado.objects.filter(obra_social__activa=False).update(
+                            baja=True, 
+                            fecha_baja=fecha_actual
+                        )
+    
+                        if cantidad_os_inactivadas > 0:
+                            logger.warning(f"Se marcaron como inactivas {cantidad_os_inactivadas} Obras Sociales.")
+
+            
                 except Exception as e:
                     error_msg = f'Fila {index + 2}: {str(e)}'
                     errores.append(error_msg)

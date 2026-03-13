@@ -89,40 +89,64 @@
                 </table>
             </div>
 
-            {% if consultas.has_other_pages %}
-            <nav aria-label="Paginación de bonos" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if consultas.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ consultas.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                            Anterior
-                        </a>
-                    </li>
-                    {% endif %}
+            paginación {{is_paginated}}
 
-                    {% for num in consultas.paginator.page_range %}
-                        {% if consultas.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                        {% else %}
+            {% if is_paginated %}
+                <nav aria-label="Paginación de bonos" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                                {{ num }}
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                                Anterior
                             </a>
                         </li>
                         {% endif %}
-                    {% endfor %}
 
-                    {% if consultas.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ consultas.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
-                            Siguiente
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
+                        {# Mostrar siempre la primera página #}
+                        {% if page_obj.number > 3 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">1</a>
+                        </li>
+                        {% if page_obj.number > 4 %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% endif %}
+                        {% endif %}
+
+                        {# Mostrar rango de páginas alrededor de la actual #}
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {# Mostrar siempre la última página #}
+                        {% if page_obj.number < page_obj.paginator.num_pages|add:'-2' %}
+                            {% if page_obj.number < page_obj.paginator.num_pages|add:'-3' %}
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                            {% endif %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ page_obj.paginator.num_pages }}</a>
+                            </li>
+                        {% endif %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">
+                                Siguiente
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                
             {% endif %}
         </div>
     </div>

@@ -7,6 +7,9 @@ class ObraSocial(models.Model):
     os_nombre = models.CharField(max_length=255)
     coseguro = models.BooleanField(default=True)
     monto_coseguro = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    activa = models.BooleanField(default=True)
+    fecha_baja = models.DateField(null=True, blank=True)
+    fecha_alta = models.DateField(null=True, blank=True)
     
 
     class Meta:
@@ -40,8 +43,8 @@ class Afiliado(models.Model):
     prov_nombr = models.CharField(max_length=255)
     telefono = models.CharField(max_length=255)
     calle = models.CharField(max_length=255)
-    fecha_alta = models.CharField(max_length=255)
-    fecha_baja = models.CharField(max_length=255)
+    fecha_alta = models.CharField(max_length=255, null=True, blank=True)
+    fecha_baja = models.CharField(max_length=255, null=True, blank=True)
     sucursal = models.CharField(max_length=255)
     cobrador = models.CharField(max_length=255)
     coberturae = models.CharField(max_length=255)

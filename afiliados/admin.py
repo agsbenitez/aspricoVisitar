@@ -3,13 +3,14 @@ from .models import Afiliado, ObraSocial
 
 @admin.register(ObraSocial)
 class ObraSocialAdmin(admin.ModelAdmin):
-    list_display = ('os_id', 'os_nombre', 'coseguro', 'monto_coseguro')
+    list_display = ('os_id', 'os_nombre', 'coseguro', 'monto_coseguro', 'activa', 'fecha_baja', 'fecha_alta')
+    list_filter = ('activa',)
     search_fields = ('os_id', 'os_nombre')
-    ordering = ('os_nombre',)
+    ordering = ('-activa','os_nombre',)
 
 @admin.register(Afiliado)
 class AfiliadoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'nrodoc', 'cuil', 'get_obra_social_nombre')
+    list_display = ('nombre', 'nrodoc', 'cuil', 'get_obra_social_nombre','baja', 'fecha_baja')
     list_filter = ('obra_social__os_nombre', 'estado_afi')
     search_fields = ('nombre', 'nrodoc', 'cuil')
     ordering = ('nombre',)
